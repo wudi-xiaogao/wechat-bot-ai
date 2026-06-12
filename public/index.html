@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG 知识库管理</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 24px; color: #1a73e8; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap; }
+    .tab { padding: 10px 20px; cursor: pointer; border-radius: 6px 6px 0 0; background: #e8eaed; font-weight: 500; font-size: 14px; }
+    .tab.active { background: #1a73e8; color: #fff; }
+    .panel { display: none; background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .panel.active { display: block; }
+    .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+    .btn-primary { background: #1a73e8; color: #fff; }
+    .btn-danger { background: #ea4335; color: #fff; }
+    .btn-success { background: #34a853; color: #fff; }
+    .btn-warning { background: #f59e0b; color: #fff; }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .file-tree { border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; min-height: 200px; max-height: 500px; overflow-y: auto; }
+    .file-item { display: flex; align-items: center; padding: 8px 12px; border-radius: 4px; cursor: pointer; gap: 8px; }
+    .file-item:hover { background: #f0f4ff; }
+    .file-item.selected { background: #e3f2fd; }
+    .file-item .icon { width: 20px; text-align: center; }
+    .file-item .name { flex: 1; }
+    .file-item .meta { font-size: 12px; color: #666; }
+    .folder-children { padding-left: 20px; }
+    .editor-area { margin-top: 16px; }
+    .editor-area textarea { width: 100%; height: 400px; padding: 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-family: monospace; font-size: 14px; resize: vertical; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #555; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .form-group .hint { font-size: 12px; color: #888; margin-top: 4px; }
+    .tag-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; min-height: 42px; align-items: center; }
+    .tag { display: inline-flex; align-items: center; gap: 4px; background: #e3f2fd; padding: 4px 10px; border-radius: 12px; font-size: 13px; }
+    .tag .remove { cursor: pointer; color: #666; font-weight: bold; }
+    .tag-input input { border: none; outline: none; flex: 1; min-width: 100px; padding: 4px; }
+    .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; font-weight: 500; z-index: 9999; animation: fadeIn 0.3s; }
+    .toast.success { background: #34a853; }
+    .toast.error { background: #ea4335; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #fff; border-radius: 8px; padding: 24px; min-width: 360px; max-width: 90vw; }
+    .modal h3 { margin-bottom: 16px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+    .folder-item { cursor: pointer; }
+    .icon-expand { font-size: 10px; color: #666; transition: transform 0.2s; }
+    .upload-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 40px; text-align: center; color: #888; cursor: pointer; transition: border-color 0.2s; }
+    .upload-zone:hover, .upload-zone.dragover { border-color: #1a73e8; color: #1a73e8; }
+    .upload-zone input { display: none; }
+    /* 微信登录卡片 */
+    .wechat-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .wechat-status { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .status-badge { padding: 6px 12px; border-radius: 12px; font-size: 14px; font-weight: 500; }
+    .status-badge.online { background: #e8f5e9; color: #2e7d32; }
+    .status-badge.offline { background: #ffebee; color: #c62828; }
+    .status-badge.waiting { background: #fff3e0; color: #ef6c00; }
+    .qrcode-box { text-align: center; padding: 20px; background: #fafafa; border-radius: 8px; }
+    .qrcode-box img { max-width: 256px; border-radius: 8px; }
+    .qrcode-box p { margin-top: 12px; color: #666; }
+    .status-refresh { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+    /* 运行配置 */
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .config-grid .form-group { margin-bottom: 0; }
+    @media (max-width: 640px) { .config-grid { grid-template-columns: 1fr; } }
+    .config-section { margin-bottom: 24px; }
+    .config-section h3 { font-size: 15px; color: #1a73e8; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0; }
+    .live-badge { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px; }
+    /* 队列状态 */
+    .queue-panel { margin-top: 24px; padding: 16px; background: #fafafa; border-radius: 8px; border: 1px solid #e0e0e0; }
+    .queue-panel h3 { font-size: 15px; color: #333; margin-bottom: 12px; }
+    .queue-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .queue-stat-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; }
+    .queue-stat-card .label { font-size: 12px; color: #888; }
+    .queue-stat-card .value { font-size: 20px; font-weight: 600; color: #1a73e8; }
+    .queue-list { margin-top: 12px; }
+    .queue-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 4px; background: #fff; border: 1px solid #eee; margin-bottom: 6px; }
+    .queue-item .id { font-family: monospace; font-size: 13px; color: #555; }
+    .queue-item .info { font-size: 13px; color: #888; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>RAG 知识库管理系统</h1>
+  <div class="tabs">
+    <div class="tab active" data-tab="wechat">微信登录</div>
+    <div class="tab" data-tab="documents">文档管理</div>
+    <div class="tab" data-tab="bot-config">机器人配置</div>
+    <div class="tab" data-tab="runtime-config">运行配置 <span class="live-badge">热加载</span></div>
+    <div class="tab" data-tab="model-config">模型配置</div>
+  </div>
+
+  <!-- 微信登录 -->
+  <div class="panel active" id="panel-wechat">
+    <div class="wechat-card">
+      <div class="wechat-status">
+        <span>微信状态：</span>
+        <span class="status-badge" id="wechat-status-badge">检测中...</span>
+      </div>
+      <div id="wechat-qrcode-box" style="display:none">
+        <div class="qrcode-box">
+          <img id="wechat-qrcode-img" src="" alt="微信二维码">
+          <p>请使用微信扫码登录</p>
+        </div>
+      </div>
+      <div id="wechat-online-info" style="display:none">
+        <p style="color:#2e7d32">✅ 微信已登录，机器人正常运行</p>
+      </div>
+      <div class="status-refresh">
+        <button class="btn btn-primary" onclick="refreshWechatStatus()">刷新状态</button>
+        <button class="btn btn-warning" onclick="triggerRelogin()">重新登录</button>
+        <span style="color:#666;font-size:12px">每5秒自动刷新</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 文档管理 -->
+  <div class="panel" id="panel-documents">
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="showUploadModal()">上传文档</button>
+      <button class="btn btn-success" onclick="showFolderModal()">新建文件夹</button>
+      <button class="btn btn-danger" id="btn-delete" onclick="deleteSelected()" disabled>删除选中</button>
+      <button class="btn btn-primary" id="btn-edit" onclick="editSelected()" disabled>编辑</button>
+      <button class="btn btn-primary" id="btn-download" onclick="downloadSelected()" disabled>下载</button>
+      <button class="btn btn-success" onclick="rebuildIndex()">重建索引</button>
+    </div>
+    <div class="file-tree" id="file-tree"></div>
+    <div class="editor-area" id="editor-area" style="display:none">
+      <h3 id="editor-title">编辑文件</h3>
+      <textarea id="editor-content"></textarea>
+      <div style="margin-top:10px;display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="saveContent()">保存</button>
+        <button class="btn" style="background:#e0e0e0" onclick="closeEditor()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 机器人配置 -->
+  <div class="panel" id="panel-bot-config">
+    <div class="form-group">
+      <label>机器人名称</label>
+      <input type="text" id="bot-name">
+      <div class="hint">用于从消息中去除@部分，不再要求必须@才回复</div>
+    </div>
+    <div class="form-group">
+      <label>群聊白名单（回车添加，支持通配符 * 和 ?）</label>
+      <div class="tag-input" id="room-tags"></div>
+      <div class="hint">例如：技术*支持 可匹配「技术1群支持」，客户?群 可匹配「客户A群」</div>
+    </div>
+    <div class="form-group">
+      <label>联系人白名单（回车添加）</label>
+      <div class="tag-input" id="alias-tags"></div>
+    </div>
+    <div class="form-group">
+      <label>问题关键词（回车添加）</label>
+      <div class="tag-input" id="keyword-tags"></div>
+      <div class="hint">命中关键词的消息直接回复，跳过AI意图识别（节省API调用）；留空则全部走AI意图识别</div>
+    </div>
+    <div class="form-group">
+      <label>意图识别模型</label>
+      <input type="text" id="intent-model" placeholder="deepseek-v4-flash">
+      <div class="hint">用于判断群聊消息是否为提问，建议用快速廉价模型</div>
+    </div>
+    <button class="btn btn-primary" onclick="saveBotConfig()">保存配置</button>
+  </div>
+
+  <!-- 运行配置（热加载） -->
+  <div class="panel" id="panel-runtime-config">
+    <div class="config-section">
+      <h3>📨 队列配置</h3>
+      <div class="config-grid">
+        <div class="form-group">
+          <label>任务过期时间（毫秒）</label>
+          <input type="number" id="cfg-task-expire" min="10000" max="600000" step="1000">
+          <div class="hint">超过此时间的任务不再发送，默认 120000</div>
+        </div>
+        <div class="form-group">
+          <label>单群最大队列长度</label>
+          <input type="number" id="cfg-queue-max-length" min="1" max="100">
+          <div class="hint">超出时丢弃最旧任务，默认 10</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <h3>⏱️ 发送频率控制</h3>
+      <div class="config-grid">
+        <div class="form-group">
+          <label>发送冷却间隔（毫秒）</label>
+          <input type="number" id="cfg-send-cooldown" min="0" max="30000" step="100">
+          <div class="hint">两条消息间最小间隔，0 表示无冷却，默认 0</div>
+        </div>
+        <div class="form-group">
+          <label>频率限制窗口（毫秒）</label>
+          <input type="number" id="cfg-rate-window" min="1000" max="600000" step="1000">
+          <div class="hint">在此窗口内最多回复指定次数，默认 60000</div>
+        </div>
+        <div class="form-group">
+          <label>窗口内最大回复数</label>
+          <input type="number" id="cfg-rate-max" min="1" max="200">
+          <div class="hint">频率限制窗口内最大回复数，默认 20</div>
+        </div>
+        <div class="form-group">
+          <label>消息最大容忍时间（秒）</label>
+          <input type="number" id="cfg-msg-max-age" min="5" max="600">
+          <div class="hint">超过此时间的消息忽略，默认 60</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <h3>🧠 意图识别配置</h3>
+      <div class="config-grid">
+        <div class="form-group">
+          <label>意图识别模型</label>
+          <input type="text" id="cfg-intent-model" placeholder="deepseek-v4-flash">
+          <div class="hint">判断群聊消息是否为提问的模型</div>
+        </div>
+        <div class="form-group">
+          <label>意图识别超时（毫秒）</label>
+          <input type="number" id="cfg-intent-timeout" min="1000" max="30000" step="500">
+          <div class="hint">超时后默认视为提问（fail-open），默认 5000</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveRuntimeConfig()">保存并实时生效</button>
+
+    <!-- 队列状态 -->
+    <div class="queue-panel">
+      <h3>📊 队列实时状态 <span style="font-size:12px;color:#888;font-weight:normal">（每5秒刷新）</span></h3>
+      <div class="queue-stats-grid" id="queue-stats-grid"></div>
+      <div class="queue-list" id="queue-list"></div>
+    </div>
+  </div>
+
+  <!-- 模型配置 -->
+  <div class="panel" id="panel-model-config">
+    <div class="form-group">
+      <label>API Key</label>
+      <input type="password" id="cfg-api-key">
+    </div>
+    <div class="form-group">
+      <label>API Base URL</label>
+      <input type="text" id="cfg-base-url">
+    </div>
+    <div class="form-group">
+      <label>文本对话模型</label>
+      <input type="text" id="cfg-model" placeholder="用于普通文本对话">
+    </div>
+    <div class="form-group">
+      <label>图片理解模型</label>
+      <input type="text" id="cfg-vision-model" placeholder="需支持多模态输入">
+    </div>
+    <div class="form-group">
+      <label>图片理解最大输出 Token</label>
+      <input type="number" id="cfg-vision-max-tokens" min="100" max="4000" placeholder="1000">
+    </div>
+    <div class="form-group">
+      <label>RAG 模型</label>
+      <input type="text" id="cfg-rag-model">
+    </div>
+    <div class="form-group">
+      <label>RAG 启用</label>
+      <select id="cfg-rag-enabled"><option value="true">启用</option><option value="false">禁用</option></select>
+    </div>
+    <div class="form-group">
+      <label>RAG Top K</label>
+      <input type="number" id="cfg-rag-topk" min="1" max="10">
+    </div>
+    <button class="btn btn-primary" onclick="saveModelConfig()">保存配置</button>
+  </div>
+</div>
+
+<!-- 上传弹窗 -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <h3>上传文档</h3>
+    <div class="form-group">
+      <label>目标文件夹（可选）</label>
+      <select id="upload-folder"><option value="">根目录</option></select>
+    </div>
+    <div class="upload-zone" id="upload-zone">
+      <p>点击或拖拽文件到此处</p>
+      <p style="font-size:12px;margin-top:8px">支持 .md .txt .docx .doc .pdf</p>
+      <input type="file" id="upload-input" accept=".md,.txt,.docx,.doc,.pdf">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" style="background:#e0e0e0" onclick="closeModal('upload-modal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新建文件夹弹窗 -->
+<div class="modal-overlay" id="folder-modal">
+  <div class="modal">
+    <h3>新建文件夹</h3>
+    <div class="form-group">
+      <label>文件夹名称</label>
+      <input type="text" id="folder-name" placeholder="请输入文件夹名称">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="createFolder()">创建</button>
+      <button class="btn" style="background:#e0e0e0" onclick="closeModal('folder-modal')">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedFile = null;
+let documents = [];
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'bot-config') loadBotConfig();
+    if (tab.dataset.tab === 'model-config') loadModelConfig();
+    if (tab.dataset.tab === 'runtime-config') { loadRuntimeConfig(); startQueueRefresh(); }
+    else { stopQueueRefresh(); }
+  });
+});
+
+// Toast
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// Modal
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function showUploadModal() { document.getElementById('upload-modal').classList.add('show'); updateFolderSelect(); }
+function showFolderModal() { document.getElementById('folder-modal').classList.add('show'); }
+
+// Documents
+async function loadDocuments() {
+  const res = await fetch('/api/documents').then(r => r.json());
+  if (res.success) { documents = res.documents; renderTree(); }
+}
+
+function renderTree() {
+  document.getElementById('file-tree').innerHTML = renderNodes(documents);
+}
+
+function renderNodes(nodes, depth = 0) {
+  return nodes.map(node => {
+    if (node.type === 'folder') {
+      const folderId = 'folder-' + node.path.replace(/[/\\]/g, '-');
+      return `<div class="file-item folder-item" data-path="${encodeURIComponent(node.path)}" data-type="folder" style="padding-left:${depth*20+12}px" onclick="selectFile(this)">
+        <span class="icon">📁</span>
+        <span class="name">${node.name}</span>
+        <span class="icon-expand" onclick="toggleFolder('${folderId}', event)">▼</span>
+      </div><div class="folder-children" id="${folderId}" style="display:none">${renderNodes(node.children, depth+1)}</div>`;
+    }
+    const size = node.size > 1024 ? (node.size/1024).toFixed(1)+'KB' : node.size+'B';
+    return `<div class="file-item" data-path="${encodeURIComponent(node.path)}" data-ext="${node.ext}" data-type="file" onclick="selectFile(this)">
+      <span class="icon">${getIcon(node.ext)}</span>
+      <span class="name">${node.name}</span>
+      <span class="meta">${size}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleFolder(folderId, event) {
+  if (event) event.stopPropagation();
+  const el = document.getElementById(folderId);
+  const parentEl = el.previousElementSibling;
+  const expandIcon = parentEl.querySelector('.icon-expand');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    expandIcon.textContent = '▼';
+  } else {
+    el.style.display = 'none';
+    expandIcon.textContent = '▶';
+  }
+}
+
+function getIcon(ext) {
+  const icons = {'.md':'📝','.txt':'📄','.pdf':'📕','.docx':'📘','.doc':'📘'};
+  return icons[ext] || '📄';
+}
+
+function selectFile(el) {
+  document.querySelectorAll('.file-item').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  const type = el.dataset.type || 'file';
+  const ext = el.dataset.ext;
+  selectedFile = { path: decodeURIComponent(el.dataset.path), ext, type };
+  document.getElementById('btn-delete').disabled = false;
+  document.getElementById('btn-edit').disabled = !(ext === '.md' || ext === '.txt');
+  document.getElementById('btn-download').disabled = type === 'folder';
+}
+
+// Download
+function downloadSelected() {
+  if (!selectedFile) return;
+  const url = '/api/download?path=' + encodeURIComponent(selectedFile.path);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = selectedFile.path.split('/').pop();
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast('开始下载: ' + selectedFile.path.split('/').pop());
+}
+
+// Delete
+async function deleteSelected() {
+  if (!selectedFile) return;
+  const typeText = selectedFile.type === 'folder' ? '文件夹' : '文件';
+  if (!confirm('确定删除 ' + typeText + ' ' + selectedFile.path + '？')) return;
+  const res = await fetch('/api/delete', { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:selectedFile.path, type:selectedFile.type}) }).then(r=>r.json());
+  if (res.success) { toast('删除成功'); selectedFile=null; document.getElementById('btn-delete').disabled=true; document.getElementById('btn-edit').disabled=true; document.getElementById('btn-download').disabled=true; loadDocuments(); }
+  else toast(res.error,'error');
+}
+
+// Edit
+async function editSelected() {
+  if (!selectedFile) return;
+  const res = await fetch('/api/content?path='+encodeURIComponent(selectedFile.path)).then(r=>r.json());
+  if (res.success) {
+    document.getElementById('editor-area').style.display='block';
+    document.getElementById('editor-title').textContent='编辑: '+selectedFile.path;
+    document.getElementById('editor-content').value=res.content;
+  } else toast(res.error,'error');
+}
+
+async function saveContent() {
+  const content = document.getElementById('editor-content').value;
+  const res = await fetch('/api/update', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path:selectedFile.path, content}) }).then(r=>r.json());
+  if (res.success) { toast('保存成功'); closeEditor(); } else toast(res.error,'error');
+}
+
+function closeEditor() { document.getElementById('editor-area').style.display='none'; }
+
+// Upload
+const uploadZone = document.getElementById('upload-zone');
+const uploadInput = document.getElementById('upload-input');
+uploadZone.addEventListener('click', () => uploadInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('dragover'); uploadFile(e.dataTransfer.files[0]); });
+uploadInput.addEventListener('change', () => { if(uploadInput.files[0]) uploadFile(uploadInput.files[0]); });
+
+async function uploadFile(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const folder = document.getElementById('upload-folder').value;
+  let url = '/api/upload';
+  if (folder) url += '?folder=' + encodeURIComponent(folder);
+  const res = await fetch(url, { method:'POST', body:fd }).then(r=>r.json());
+  if (res.success) { toast('上传成功: '+res.file); closeModal('upload-modal'); loadDocuments(); }
+  else toast(res.error,'error');
+}
+
+function updateFolderSelect() {
+  const sel = document.getElementById('upload-folder');
+  sel.innerHTML = '<option value="">根目录</option>';
+  collectFolders(documents, '').forEach(f => { sel.innerHTML += `<option value="${f}">${f}</option>`; });
+}
+function collectFolders(nodes, prefix) {
+  let result = [];
+  nodes.forEach(n => { if(n.type==='folder') { const p=prefix?prefix+'/'+n.name:n.name; result.push(p); result=result.concat(collectFolders(n.children,p)); } });
+  return result;
+}
+
+// Create folder
+async function createFolder() {
+  const name = document.getElementById('folder-name').value.trim();
+  if (!name) return toast('请输入名称','error');
+  const res = await fetch('/api/folder', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name}) }).then(r=>r.json());
+  if (res.success) { toast('创建成功'); closeModal('folder-modal'); document.getElementById('folder-name').value=''; loadDocuments(); }
+  else toast(res.error,'error');
+}
+
+// Rebuild index
+async function rebuildIndex() {
+  const res = await fetch('/api/rebuild', { method:'POST' }).then(r=>r.json());
+  if (res.success) toast('索引重建成功，共 '+res.count+' 个文档片段');
+  else toast(res.error,'error');
+}
+
+// Bot config
+async function loadBotConfig() {
+  const res = await fetch('/api/config/bot').then(r=>r.json());
+  if (res.success) {
+    document.getElementById('bot-name').value = res.config.botName;
+    renderTags('room-tags', res.config.roomWhiteList);
+    renderTags('alias-tags', res.config.aliasWhiteList);
+    renderTags('keyword-tags', res.config.questionKeywords || []);
+    document.getElementById('intent-model').value = res.config.intentModel || 'deepseek-v4-flash';
+  }
+}
+
+function renderTags(containerId, items) {
+  const container = document.getElementById(containerId);
+  // 保留已有 tags，仅在空时初始化
+  if (container.querySelectorAll('.tag').length === 0 && container.querySelector('input') === null) {
+    container.innerHTML = '';
+  }
+  // 清除已有内容和 input
+  container.innerHTML = '';
+  items.forEach(item => {
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.innerHTML = escapeHtml(item) + '<span class="remove" onclick="this.parentElement.remove()">×</span>';
+    container.appendChild(tag);
+  });
+  const input = document.createElement('input');
+  input.placeholder = '输入后回车添加';
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && input.value.trim()) {
+      e.preventDefault();
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.innerHTML = escapeHtml(input.value.trim()) + '<span class="remove" onclick="this.parentElement.remove()">×</span>';
+      container.insertBefore(tag, input);
+      input.value = '';
+    }
+  });
+  container.appendChild(input);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function getTagValues(containerId) {
+  return [...document.getElementById(containerId).querySelectorAll('.tag')].map(t => t.firstChild.textContent);
+}
+
+async function saveBotConfig() {
+  const data = {
+    botName: document.getElementById('bot-name').value,
+    roomWhiteList: getTagValues('room-tags'),
+    aliasWhiteList: getTagValues('alias-tags'),
+    questionKeywords: getTagValues('keyword-tags'),
+    intentModel: document.getElementById('intent-model').value || 'deepseek-v4-flash',
+  };
+  const res = await fetch('/api/config/bot', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(r=>r.json());
+  if (res.success) toast('机器人配置保存成功（部分配置重启后生效）'); else toast(res.error,'error');
+}
+
+// Runtime config (hot-reload)
+async function loadRuntimeConfig() {
+  const res = await fetch('/api/config/runtime').then(r=>r.json());
+  if (res.success) {
+    document.getElementById('cfg-task-expire').value = res.config.TASK_EXPIRE_THRESHOLD;
+    document.getElementById('cfg-queue-max-length').value = res.config.QUEUE_MAX_LENGTH;
+    document.getElementById('cfg-send-cooldown').value = res.config.SEND_COOLDOWN;
+    document.getElementById('cfg-rate-window').value = res.config.RATE_LIMIT_WINDOW;
+    document.getElementById('cfg-rate-max').value = res.config.RATE_LIMIT_MAX;
+    document.getElementById('cfg-msg-max-age').value = res.config.MSG_MAX_AGE;
+    document.getElementById('cfg-intent-model').value = res.config.INTENT_MODEL;
+    document.getElementById('cfg-intent-timeout').value = res.config.INTENT_TIMEOUT;
+  }
+}
+
+async function saveRuntimeConfig() {
+  const data = {
+    TASK_EXPIRE_THRESHOLD: document.getElementById('cfg-task-expire').value,
+    QUEUE_MAX_LENGTH: document.getElementById('cfg-queue-max-length').value,
+    SEND_COOLDOWN: document.getElementById('cfg-send-cooldown').value,
+    RATE_LIMIT_WINDOW: document.getElementById('cfg-rate-window').value,
+    RATE_LIMIT_MAX: document.getElementById('cfg-rate-max').value,
+    MSG_MAX_AGE: document.getElementById('cfg-msg-max-age').value,
+    INTENT_MODEL: document.getElementById('cfg-intent-model').value,
+    INTENT_TIMEOUT: document.getElementById('cfg-intent-timeout').value,
+  };
+  const res = await fetch('/api/config/runtime', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(r=>r.json());
+  if (res.success) toast('运行配置已实时生效 ✅'); else toast(res.error,'error');
+}
+
+// Queue stats
+let queueRefreshInterval = null;
+
+async function refreshQueueStats() {
+  try {
+    const res = await fetch('/api/queue/stats').then(r => r.json());
+    if (!res.success) return;
+
+    const grid = document.getElementById('queue-stats-grid');
+    grid.innerHTML = `
+      <div class="queue-stat-card"><div class="label">活跃队列数</div><div class="value">${res.totalQueues}</div></div>
+      ${res.config ? `
+        <div class="queue-stat-card"><div class="label">最大队列长度</div><div class="value">${res.config.queueMaxLength}</div></div>
+        <div class="queue-stat-card"><div class="label">发送冷却</div><div class="value">${res.config.sendCooldown}ms</div></div>
+        <div class="queue-stat-card"><div class="label">频率限制</div><div class="value">${res.config.rateLimitMax}/${(res.config.rateLimitWindow/1000).toFixed(0)}s</div></div>
+      ` : ''}
+    `;
+
+    const list = document.getElementById('queue-list');
+    const queues = res.queues || {};
+    const queueIds = Object.keys(queues);
+    if (queueIds.length === 0) {
+      list.innerHTML = '<p style="color:#888;font-size:13px;padding:8px">当前无活跃队列</p>';
+    } else {
+      list.innerHTML = queueIds.map(id => {
+        const q = queues[id];
+        return `<div class="queue-item">
+          <span class="id">${id.substring(0, 16)}...</span>
+          <span class="info">队列: ${q.queueLength} | ${q.processing ? '处理中' : '空闲'} | 已发: ${q.recentSends}/${q.rateLimitMax}</span>
+        </div>`;
+      }).join('');
+    }
+  } catch (e) {
+    console.error('队列状态获取失败:', e);
+  }
+}
+
+function startQueueRefresh() {
+  refreshQueueStats();
+  if (!queueRefreshInterval) {
+    queueRefreshInterval = setInterval(refreshQueueStats, 5000);
+  }
+}
+
+function stopQueueRefresh() {
+  if (queueRefreshInterval) {
+    clearInterval(queueRefreshInterval);
+    queueRefreshInterval = null;
+  }
+}
+
+// Model config
+async function loadModelConfig() {
+  const res = await fetch('/api/config/model').then(r=>r.json());
+  if (res.success) {
+    document.getElementById('cfg-api-key').value = res.config.OPENAI_API_KEY;
+    document.getElementById('cfg-base-url').value = res.config.OPENAI_BASE_URL;
+    document.getElementById('cfg-model').value = res.config.MODEL || '';
+    document.getElementById('cfg-vision-model').value = res.config.VISION_MODEL || '';
+    document.getElementById('cfg-vision-max-tokens').value = res.config.VISION_MAX_TOKENS || '1000';
+    document.getElementById('cfg-rag-model').value = res.config.RAG_MODEL;
+    document.getElementById('cfg-rag-enabled').value = res.config.RAG_ENABLED;
+    document.getElementById('cfg-rag-topk').value = res.config.RAG_TOP_K;
+  }
+}
+
+async function saveModelConfig() {
+  const data = {
+    OPENAI_API_KEY: document.getElementById('cfg-api-key').value,
+    OPENAI_BASE_URL: document.getElementById('cfg-base-url').value,
+    MODEL: document.getElementById('cfg-model').value,
+    VISION_MODEL: document.getElementById('cfg-vision-model').value,
+    VISION_MAX_TOKENS: document.getElementById('cfg-vision-max-tokens').value,
+    RAG_MODEL: document.getElementById('cfg-rag-model').value,
+    RAG_ENABLED: document.getElementById('cfg-rag-enabled').value,
+    RAG_TOP_K: document.getElementById('cfg-rag-topk').value
+  };
+  const res = await fetch('/api/config/model', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(r=>r.json());
+  if (res.success) toast('模型配置保存成功，已实时生效'); else toast(res.error,'error');
+}
+
+// Init
+loadDocuments();
+
+// Wechat status
+let wechatRefreshInterval = null;
+
+async function refreshWechatStatus() {
+  try {
+    const res = await fetch('/api/wechat/status').then(r => r.json());
+    if (!res.success) {
+      document.getElementById('wechat-status-badge').textContent = '未初始化';
+      document.getElementById('wechat-status-badge').className = 'status-badge offline';
+      return;
+    }
+
+    const badge = document.getElementById('wechat-status-badge');
+    const qrcodeBox = document.getElementById('wechat-qrcode-box');
+    const onlineInfo = document.getElementById('wechat-online-info');
+    const qrcodeImg = document.getElementById('wechat-qrcode-img');
+
+    if (res.isLoggedIn) {
+      badge.textContent = '已登录';
+      badge.className = 'status-badge online';
+      qrcodeBox.style.display = 'none';
+      onlineInfo.style.display = 'block';
+    } else if (res.qrcode) {
+      badge.textContent = '等待扫码';
+      badge.className = 'status-badge waiting';
+      qrcodeBox.style.display = 'block';
+      onlineInfo.style.display = 'none';
+      qrcodeImg.src = res.qrcode;
+    } else {
+      badge.textContent = '未登录';
+      badge.className = 'status-badge offline';
+      qrcodeBox.style.display = 'none';
+      onlineInfo.style.display = 'none';
+    }
+  } catch (e) {
+    console.error('获取微信状态失败:', e);
+  }
+}
+
+async function triggerRelogin() {
+  try {
+    const res = await fetch('/api/wechat/relogin', { method: 'POST' }).then(r => r.json());
+    if (res.success) {
+      toast('已触发重新登录，请扫码');
+      setTimeout(refreshWechatStatus, 2000);
+    } else {
+      toast(res.error, 'error');
+    }
+  } catch (e) {
+    toast('重新登录失败', 'error');
+  }
+}
+
+// 启动微信状态自动刷新
+function startWechatAutoRefresh() {
+  refreshWechatStatus();
+  wechatRefreshInterval = setInterval(refreshWechatStatus, 5000);
+}
+
+// 切换到微信标签页时启动刷新，离开时停止
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    if (tab.dataset.tab === 'wechat') {
+      startWechatAutoRefresh();
+    } else if (wechatRefreshInterval) {
+      clearInterval(wechatRefreshInterval);
+      wechatRefreshInterval = null;
+    }
+  });
+});
+
+// 页面加载时启动刷新（因为微信标签页默认 active）
+startWechatAutoRefresh();
+</script>
+</body>
+</html>

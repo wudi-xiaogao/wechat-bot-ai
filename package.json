@@ -1,0 +1,37 @@
+{
+  "name": "wechat-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node ./index.js",
+    "dev": "node ./index.js",
+    "test": "node ./src/wechaty/testMessage.js",
+    "test-openai": "node ./src/openai/__test__.js",
+    "test-kimi": "node ./src/kimi/__test__.js",
+    "test-rag": "node ./src/rag/__test__.js"
+  },
+  "author": "rongding",
+  "license": "ISC",
+  "dependencies": {
+    "@xenova/transformers": "^2.17.2",
+    "axios": "^1.6.8",
+    "chatgpt": "^2.5.2",
+    "chokidar": "^5.0.0",
+    "dotenv": "^16.0.3",
+    "express": "^5.2.1",
+    "inquirer": "^9.2.16",
+    "mammoth": "^1.12.0",
+    "multer": "^2.1.1",
+    "openai": "^3.1.0",
+    "p-timeout": "^6.0.0",
+    "pdf-parse": "^2.4.5",
+    "qrcode-terminal": "^0.12.0",
+    "remark": "^14.0.2",
+    "sharp": "^0.35.0",
+    "strip-markdown": "^5.0.0",
+    "wechaty": "^1.20.2",
+    "wechaty-puppet-wechat4u": "^1.14.14"
+  }
+}

@@ -1,0 +1,36 @@
+services:
+  wechat-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APT_SOURCE: aliyun  # 使用阿里云镜像加速，可选 default
+    container_name: wechat-bot
+    restart: unless-stopped
+    ports:
+      - "3000:3000"  # RAG 管理界面端口
+    environment:
+      # OpenAI 兼容 API 配置
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      # RAG 配置
+      - RAG_ENABLED=${RAG_ENABLED:-true}
+      - RAG_DIR=/app/rag
+      - RAG_TOP_K=${RAG_TOP_K:-5}
+      - RAG_MODEL=${RAG_MODEL:-glm-5}
+      - RAG_MAX_CONTEXT=${RAG_MAX_CONTEXT:-4000}
+      - RAG_ADMIN_PORT=3000
+      # Embedding 配置（本地模型）
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-Xenova/multilingual-e5-small}
+      - VECTOR_PATH=/app/data/vectors.json
+      - HF_MIRROR=${HF_MIRROR:-https://hf-mirror.com}
+      # 时区
+      - TZ=Asia/Shanghai
+    volumes:
+      # 持久化数据
+      - ./rag:/app/rag  # 知识库文件
+      - ./data:/app/data  # 微信登录数据 + 向量数据
+      - ./config.js:/app/config.js  # 配置文件（可选，方便修改）
+      - ./.env:/app/.env  # 环境变量文件
+    stdin_open: true  # 保持 stdin 开启，支持交互式选择服务类型
+    tty: true  # 分配伪终端，支持 inquirer 交互

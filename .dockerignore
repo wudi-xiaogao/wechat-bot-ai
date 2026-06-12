@@ -1,0 +1,34 @@
+# 依赖目录
+node_modules/
+
+# 敏感配置文件（通过环境变量或 volumes 注入）
+.env
+.env.local
+.env.*.local
+
+# 数据目录
+data/
+chroma_data/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日志
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# 测试文件
+coverage/
+.nyc_output/
