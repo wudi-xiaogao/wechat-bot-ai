@@ -14,6 +14,8 @@
  * - RATE_LIMIT_MAX: 窗口内最大回复数，默认 20
  */
 
+import { logChat } from '../db/logger.js'
+
 // ========== 运行参数（动态读取） ==========
 
 function getExpireThreshold() { return parseInt(process.env.TASK_EXPIRE_THRESHOLD) || 120_000 }
@@ -89,7 +91,8 @@ function recordSend(queueId) {
  *   promise: Promise<string>,
  *   target: Object,
  *   timestamp?: number,
- *   originalContent?: string
+ *   originalContent?: string,
+ *   logInfo?: { roomId?: string, roomName?: string, userId?: string, userName?: string, messageType?: string }
  * }} task 发送任务
  */
 export function enqueue(queueId, task) {
@@ -112,6 +115,7 @@ export function enqueue(queueId, task) {
     target: task.target,
     timestamp: task.timestamp || Date.now(),
     originalContent: task.originalContent || '',
+    logInfo: task.logInfo, // 聊天记录信息
   })
 
   console.log(`📥 队列入队 [${queueId}]: 当前队列长度 ${state.queue.length}/${maxLen}`)
@@ -162,6 +166,19 @@ async function processQueue(queueId) {
         await task.target.say(reply)
         recordSend(queueId)
         console.log(`📤 队列发送成功 [${queueId}]: "${task.originalContent.substring(0, 30)}..."`)
+
+        // 记录聊天日志
+        if (task.logInfo) {
+          logChat({
+            roomId: task.logInfo.roomId || queueId,
+            roomName: task.logInfo.roomName || '',
+            userId: task.logInfo.userId || '',
+            userName: task.logInfo.userName || '',
+            messageType: task.logInfo.messageType || 'text',
+            content: task.originalContent,
+            reply
+          })
+        }
       } else {
         console.warn(`⚠️ 队列跳过空回复 [${queueId}]: 内容: "${task.originalContent.substring(0, 30)}"`)
       }

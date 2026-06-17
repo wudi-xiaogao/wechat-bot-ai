@@ -7,6 +7,7 @@
  */
 
 import { classifyIntent } from '../openai/index.js'
+import { withRetry } from '../utils/retry.js'
 
 // ========== 默认问题关键词 ==========
 
@@ -66,28 +67,39 @@ export function matchKeywords(content, keywords = DEFAULT_QUESTION_KEYWORDS) {
 /**
  * 判断消息是否应该触发自动回复
  *
- * 流程：关键字优先 → AI 意图兜底
- * - 关键字命中：直接返回 true，不调用 AI（节省 API 调用）
- * - 关键字未命中：调用 AI 意图识别
+ * 流程：关键字预筛选 → AI 意图识别最终判断
+ * - 关键字命中：记录日志，但仍需 AI 意图识别确认
+ * - 关键字未命中：直接走 AI 意图识别
  * - 未配置关键词（空数组）：跳过关键字检查，直接走 AI 意图识别
- * - AI 识别失败：fail-open，返回 true（避免遗漏真实提问）
+ * - AI 识别失败（含重试）：fail-open，返回 true（避免遗漏真实提问）
  *
  * @param {string} content 消息内容
  * @param {string[]} keywords 关键词列表（空数组则跳过关键字检查，直接走AI意图识别）
  * @returns {Promise<boolean>} 是否应该回复
  */
 export async function shouldReply(content, keywords = DEFAULT_QUESTION_KEYWORDS) {
-  // 第一层：关键字匹配（仅在有关键词时执行）
+  // 第一层：关键字匹配（预筛选，不直接决定）
+  let keywordMatched = false
   if (keywords && keywords.length > 0) {
-    if (matchKeywords(content, keywords)) {
-      console.log('🎯 意图过滤: 关键字命中，直接回复')
-      return true
+    keywordMatched = matchKeywords(content, keywords)
+    if (keywordMatched) {
+      console.log('🎯 意图过滤: 关键字命中，继续 AI 意图识别确认')
     }
   }
 
-  // 第二层：AI 意图识别（关键字未命中或未配置关键词时执行）
+  // 第二层：AI 意图识别（带重试）
   console.log('🧠 意图过滤: 调用 AI 意图识别...')
-  return await classifyIntent(content)
+  const result = await withRetry(
+    () => classifyIntent(content),
+    { name: 'Intent API', maxRetries: 2 }
+  )
+
+  if (!result.success) {
+    console.log('⚠️ 意图识别 API 重试后仍失败，默认视为提问（fail-open）')
+    return true
+  }
+
+  return result.data
 }
 
 /**

@@ -3,6 +3,7 @@ import qrTerminal from 'qrcode-terminal'
 import { defaultMessage } from './sendMessage.js'
 import { startAdminServer, setRAGSystem, setScanFunctions } from '../rag/admin.js'
 import { initRAG } from '../rag/index.js'
+import { initDatabase } from '../db/index.js'
 import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path'
@@ -479,15 +480,23 @@ function handleStart(type) {
 // ========== 初始化区 ==========
 
 function init() {
+  // 初始化数据库（必须等完成后再启动管理后台，否则 getDb() 返回 null）
+  initDatabase().then(() => {
+    console.log('✅ 聊天记录数据库初始化完成')
+
+    // 启动管理后台（依赖数据库：默认用户创建、登录认证等）
+    startAdminServer()
+
+    if (env.RAG_ENABLED === 'true') {
+      initRAG().then(system => setRAGSystem(system))
+    }
+  }).catch(e => {
+    console.error('❌ 数据库初始化失败:', e)
+  })
+
   // 初始化 bot
   bot = createBot()
   bindBotEvents(bot)
-
-  // 启动管理后台
-  startAdminServer()
-  if (env.RAG_ENABLED === 'true') {
-    initRAG().then(system => setRAGSystem(system))
-  }
 
   // 设置扫码状态获取函数
   setScanFunctions(getScanStatus, triggerRelogin)

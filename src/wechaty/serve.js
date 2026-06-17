@@ -18,3 +18,12 @@ export function getServe(serviceType) {
       return getGptReply
   }
 }
+
+/**
+ * 获取 RAG 服务（支持对话历史）
+ * @param {Array<{role: string, content: string}>} history 对话历史
+ * @returns {Function} RAG 服务函数
+ */
+export function getRagServe(history = []) {
+  return (question) => getGptReply(question, history)
+}

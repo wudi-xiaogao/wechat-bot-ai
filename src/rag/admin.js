@@ -1,10 +1,15 @@
 import express from 'express'
+import session from 'express-session'
 import multer from 'multer'
 import fs from 'fs'
 import path from 'path'
 import { DocumentLoader } from './loader.js'
 import { VectorStore } from './store.js'
 import { getQueueStats } from '../wechaty/messageQueue.js'
+import { clearConfigCache } from '../config/hotReload.js'
+import logsRouter from '../api/logs.js'
+import authRouter from '../api/auth.js'
+import { initDefaultUser } from '../db/user.js'
 import dotenv from 'dotenv'
 // 延迟导入避免循环依赖
 let getScanStatus = null
@@ -102,11 +107,31 @@ export function setScanFunctions(getStatusFn, reloginFn) {
   triggerRelogin = reloginFn
 }
 
+// Session 中间件
+app.use(session({
+  secret: env.SESSION_SECRET || 'wechat-bot-secret-change-me',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24小时
+}))
+
 // 静态文件服务
 app.use(express.static(path.join(process.cwd(), 'public')))
 
 // 解析 JSON
 app.use(express.json())
+
+// Auth 路由（不需要认证）
+app.use('/api/auth', authRouter)
+
+// 认证保护中间件：所有 /api/* 路由（除 auth）需要登录
+app.use('/api', (req, res, next) => {
+  if (req.session && req.session.user) return next()
+  res.status(401).json({ success: false, error: '未登录' })
+})
+
+// 聊天记录 API
+app.use('/api', logsRouter)
 
 // API: 获取文档列表
 app.get('/api/documents', async (req, res) => {
@@ -349,6 +374,11 @@ function listDocuments(dir) {
  * 启动服务器
  */
 export function startAdminServer() {
+  // 初始化默认管理员账号
+  const defaultUser = env.ADMIN_USER || 'admin'
+  const defaultPass = env.ADMIN_PASSWORD || 'admin123'
+  initDefaultUser(defaultUser, defaultPass)
+
   app.listen(port, () => {
     console.log(`✅ RAG 管理界面已启动: http://localhost:${port}`)
   })
@@ -424,7 +454,8 @@ export const intentModel = '${intentModel || 'deepseek-v4-flash'}'
 `
 
     fs.writeFileSync(configPath, content, 'utf-8')
-    res.json({ success: true, message: '机器人配置更新成功，重启后生效' })
+    clearConfigCache() // 清除配置缓存，使热加载生效
+    res.json({ success: true, message: '机器人配置更新成功，已实时生效' })
   } catch (e) {
     res.json({ success: false, error: e.message })
   }
@@ -555,6 +586,10 @@ app.get('/api/config/runtime', (req, res) => {
         MSG_MAX_AGE: process.env.MSG_MAX_AGE || '60',
         INTENT_MODEL: process.env.INTENT_MODEL || process.env.MODEL || 'deepseek-v4-flash',
         INTENT_TIMEOUT: process.env.INTENT_TIMEOUT || '5000',
+        VIDEO_ENABLED: process.env.VIDEO_ENABLED || 'true',
+        VIDEO_MAX_SIZE: process.env.VIDEO_MAX_SIZE || String(50 * 1024 * 1024),
+        VIDEO_MAX_FRAMES: process.env.VIDEO_MAX_FRAMES || '3',
+        VIDEO_FRAME_QUALITY: process.env.VIDEO_FRAME_QUALITY || '2',
       }
     })
   } catch (e) {
@@ -572,6 +607,7 @@ app.post('/api/config/runtime', (req, res) => {
       'TASK_EXPIRE_THRESHOLD', 'QUEUE_MAX_LENGTH', 'SEND_COOLDOWN',
       'RATE_LIMIT_WINDOW', 'RATE_LIMIT_MAX', 'MSG_MAX_AGE',
       'INTENT_MODEL', 'INTENT_TIMEOUT',
+      'VIDEO_ENABLED', 'VIDEO_MAX_SIZE', 'VIDEO_MAX_FRAMES', 'VIDEO_FRAME_QUALITY',
     ]
 
     const updateValue = (key, value) => {

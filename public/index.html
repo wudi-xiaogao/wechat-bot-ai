@@ -3,278 +3,1074 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RAG 知识库管理</title>
+  <title>微信智能客服管理平台</title>
   <style>
+    /* ===== 全局基础 ===== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    h1 { text-align: center; margin-bottom: 24px; color: #1a73e8; }
-    .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap; }
-    .tab { padding: 10px 20px; cursor: pointer; border-radius: 6px 6px 0 0; background: #e8eaed; font-weight: 500; font-size: 14px; }
-    .tab.active { background: #1a73e8; color: #fff; }
-    .panel { display: none; background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .panel.active { display: block; }
-    .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
-    .btn-primary { background: #1a73e8; color: #fff; }
-    .btn-danger { background: #ea4335; color: #fff; }
-    .btn-success { background: #34a853; color: #fff; }
-    .btn-warning { background: #f59e0b; color: #fff; }
-    .btn:hover { opacity: 0.85; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .file-tree { border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; min-height: 200px; max-height: 500px; overflow-y: auto; }
-    .file-item { display: flex; align-items: center; padding: 8px 12px; border-radius: 4px; cursor: pointer; gap: 8px; }
-    .file-item:hover { background: #f0f4ff; }
-    .file-item.selected { background: #e3f2fd; }
-    .file-item .icon { width: 20px; text-align: center; }
-    .file-item .name { flex: 1; }
-    .file-item .meta { font-size: 12px; color: #666; }
-    .folder-children { padding-left: 20px; }
-    .editor-area { margin-top: 16px; }
-    .editor-area textarea { width: 100%; height: 400px; padding: 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-family: monospace; font-size: 14px; resize: vertical; }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #555; }
-    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-    .form-group .hint { font-size: 12px; color: #888; margin-top: 4px; }
-    .tag-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; min-height: 42px; align-items: center; }
-    .tag { display: inline-flex; align-items: center; gap: 4px; background: #e3f2fd; padding: 4px 10px; border-radius: 12px; font-size: 13px; }
-    .tag .remove { cursor: pointer; color: #666; font-weight: bold; }
-    .tag-input input { border: none; outline: none; flex: 1; min-width: 100px; padding: 4px; }
-    .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; font-weight: 500; z-index: 9999; animation: fadeIn 0.3s; }
-    .toast.success { background: #34a853; }
-    .toast.error { background: #ea4335; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
-    .modal-overlay.show { display: flex; }
-    .modal { background: #fff; border-radius: 8px; padding: 24px; min-width: 360px; max-width: 90vw; }
-    .modal h3 { margin-bottom: 16px; }
-    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+    :root {
+      --bg-primary: #f0f2f5;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f5f7fa;
+      --bg-input: #f5f7fa;
+      --border-color: #e8ebf0;
+      --border-glow: rgba(64,128,255,0.4);
+      --text-primary: #1d2129;
+      --text-secondary: #4e5969;
+      --text-muted: #86909c;
+      --accent-1: #4080ff;
+      --accent-2: #5b9aff;
+      --accent-gradient: linear-gradient(135deg, #4080ff 0%, #5b9aff 100%);
+      --accent-gradient-hover: linear-gradient(135deg, #5b9aff 0%, #7db4ff 100%);
+      --success: #00b42a;
+      --success-bg: rgba(0,180,42,0.08);
+      --danger: #f53f3f;
+      --danger-bg: rgba(245,63,63,0.08);
+      --warning: #ff7d00;
+      --warning-bg: rgba(255,125,0,0.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
+      --shadow-card: 0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+      --shadow-glow: 0 0 0 0 transparent;
+      --sidebar-width: 220px;
+      --sidebar-bg: #ffffff;
+      --sidebar-border: #f0f2f5;
+      --sidebar-active-bg: rgba(64,128,255,0.08);
+      --sidebar-active-border: #4080ff;
+      --sidebar-hover-bg: #f5f7fa;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ===== 整体布局 ===== */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ===== 侧边栏 ===== */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 100;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid var(--sidebar-border);
+    }
+    .sidebar-logo h1 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.5px;
+      line-height: 1.4;
+    }
+    .sidebar-logo h1 span {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .sidebar-nav {
+      padding: 12px 10px;
+      flex: 1;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      margin-bottom: 2px;
+      position: relative;
+      white-space: nowrap;
+    }
+    .nav-item:hover {
+      color: var(--text-primary);
+      background: var(--sidebar-hover-bg);
+    }
+    .nav-item.active {
+      color: var(--accent-1);
+      background: var(--sidebar-active-bg);
+      border-color: var(--sidebar-active-border);
+      font-weight: 600;
+    }
+    .nav-item .nav-icon {
+      font-size: 18px;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .nav-item .live-badge {
+      margin-left: auto;
+      background: var(--success-bg);
+      color: var(--success);
+      padding: 1px 8px;
+      border-radius: 50px;
+      font-size: 10px;
+      font-weight: 600;
+      border: 1px solid rgba(0,180,42,0.2);
+    }
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--sidebar-border);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ===== 主内容区 ===== */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 24px 28px;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+
+    /* ===== 面板 ===== */
+    .panel {
+      display: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow-card);
+    }
+    .panel.active { display: block; animation: panelIn 0.3s ease; }
+    @keyframes panelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== 按钮 ===== */
+    .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .btn {
+      padding: 9px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      color: #fff;
+    }
+    .btn-primary { background: var(--accent-gradient); }
+    .btn-primary:hover { background: var(--accent-gradient-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(64,128,255,0.25); }
+    .btn-danger { background: linear-gradient(135deg, #f53f3f, #cb2634); }
+    .btn-danger:hover { box-shadow: 0 4px 12px rgba(245,63,63,0.2); transform: translateY(-1px); }
+    .btn-success { background: linear-gradient(135deg, #00b42a, #009a29); }
+    .btn-success:hover { box-shadow: 0 4px 12px rgba(0,180,42,0.2); transform: translateY(-1px); }
+    .btn-warning { background: linear-gradient(135deg, #ff7d00, #f77234); }
+    .btn-warning:hover { box-shadow: 0 4px 12px rgba(255,125,0,0.2); transform: translateY(-1px); }
+    .btn-ghost {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      box-shadow: none;
+    }
+    .btn-ghost:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: #c9cdd4; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+    /* ===== 文件树 ===== */
+    .file-tree {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      min-height: 200px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .file-tree::-webkit-scrollbar { width: 6px; }
+    .file-tree::-webkit-scrollbar-track { background: transparent; }
+    .file-tree::-webkit-scrollbar-thumb { background: #c9cdd4; border-radius: 3px; }
+    .file-item { display: flex; align-items: center; padding: 9px 14px; border-radius: var(--radius-xs); cursor: pointer; gap: 10px; transition: all 0.2s; color: var(--text-primary); }
+    .file-item:hover { background: var(--bg-card-hover); }
+    .file-item.selected { background: rgba(64,128,255,0.08); border: 1px solid rgba(64,128,255,0.3); }
+    .file-item .icon { width: 22px; text-align: center; font-size: 16px; }
+    .file-item .name { flex: 1; font-size: 14px; }
+    .file-item .meta { font-size: 12px; color: var(--text-muted); }
+    .folder-children { padding-left: 22px; }
+    .editor-area { margin-top: 20px; }
+    .editor-area textarea {
+      width: 100%; height: 400px; padding: 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 14px; resize: vertical;
+      transition: border-color 0.25s;
+    }
+    .editor-area textarea:focus { border-color: var(--accent-1); outline: none; box-shadow: 0 0 0 3px rgba(64,128,255,0.1); }
+
+    /* ===== 表单 ===== */
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; margin-bottom: 7px; font-weight: 500; color: var(--text-primary); font-size: 14px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 11px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: all 0.25s;
+    }
+    .form-group input::placeholder { color: var(--text-muted); }
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--accent-1);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(64,128,255,0.1);
+    }
+    .form-group select { cursor: pointer; }
+    .form-group select option { background: #fff; color: var(--text-primary); }
+    .form-group .hint { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+
+    /* 标签输入 */
+    .tag-input {
+      display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      min-height: 46px; align-items: center;
+      transition: border-color 0.25s;
+    }
+    .tag-input:focus-within { border-color: var(--accent-1); box-shadow: 0 0 0 3px rgba(64,128,255,0.1); }
+    .tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(64,128,255,0.08);
+      border: 1px solid rgba(64,128,255,0.2);
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 13px;
+      color: var(--accent-1);
+    }
+    .tag .remove { cursor: pointer; color: var(--text-muted); font-weight: bold; transition: color 0.2s; }
+    .tag .remove:hover { color: var(--danger); }
+    .tag-input input { border: none; outline: none; flex: 1; min-width: 100px; padding: 4px; background: transparent; color: var(--text-primary); font-size: 14px; }
+    .tag-input input::placeholder { color: var(--text-muted); }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed; top: 24px; right: 24px;
+      padding: 14px 24px;
+      border-radius: 10px;
+      color: #fff; font-weight: 600; z-index: 9999;
+      animation: toastIn 0.4s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    .toast.success { background: #00b42a; }
+    .toast.error { background: #f53f3f; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-16px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    /* ===== 模态框 ===== */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 1000; align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; animation: modalIn 0.2s ease; }
+    @keyframes modalIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 28px;
+      min-width: 380px;
+      max-width: 90vw;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+    }
+    .modal h3 { margin-bottom: 20px; color: var(--text-primary); font-size: 18px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
     .folder-item { cursor: pointer; }
-    .icon-expand { font-size: 10px; color: #666; transition: transform 0.2s; }
-    .upload-zone { border: 2px dashed #ccc; border-radius: 8px; padding: 40px; text-align: center; color: #888; cursor: pointer; transition: border-color 0.2s; }
-    .upload-zone:hover, .upload-zone.dragover { border-color: #1a73e8; color: #1a73e8; }
+    .icon-expand { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; }
+    .upload-zone {
+      border: 2px dashed #c9cdd4;
+      border-radius: var(--radius-sm);
+      padding: 44px; text-align: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent-1);
+      color: var(--accent-1);
+      background: rgba(64,128,255,0.04);
+    }
     .upload-zone input { display: none; }
-    /* 微信登录卡片 */
-    .wechat-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-    .wechat-status { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    .status-badge { padding: 6px 12px; border-radius: 12px; font-size: 14px; font-weight: 500; }
-    .status-badge.online { background: #e8f5e9; color: #2e7d32; }
-    .status-badge.offline { background: #ffebee; color: #c62828; }
-    .status-badge.waiting { background: #fff3e0; color: #ef6c00; }
-    .qrcode-box { text-align: center; padding: 20px; background: #fafafa; border-radius: 8px; }
-    .qrcode-box img { max-width: 256px; border-radius: 8px; }
-    .qrcode-box p { margin-top: 12px; color: #666; }
-    .status-refresh { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
-    /* 运行配置 */
-    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* ===== 微信登录卡片 ===== */
+    .wechat-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .wechat-status { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; color: var(--text-secondary); }
+    .status-badge { padding: 6px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; }
+    .status-badge.online { background: var(--success-bg); color: var(--success); border: 1px solid rgba(0,180,42,0.2); }
+    .status-badge.offline { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(245,63,63,0.2); }
+    .status-badge.waiting { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(255,125,0,0.2); }
+    .qrcode-box {
+      text-align: center; padding: 24px;
+      background: #fff;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+    .qrcode-box img { max-width: 256px; border-radius: var(--radius-sm); }
+    .qrcode-box p { margin-top: 14px; color: var(--text-secondary); }
+    .status-refresh { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+    .status-refresh .hint-text { color: var(--text-muted); font-size: 12px; }
+
+    /* ===== 运行配置 ===== */
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
     .config-grid .form-group { margin-bottom: 0; }
     @media (max-width: 640px) { .config-grid { grid-template-columns: 1fr; } }
-    .config-section { margin-bottom: 24px; }
-    .config-section h3 { font-size: 15px; color: #1a73e8; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0; }
-    .live-badge { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px; }
-    /* 队列状态 */
-    .queue-panel { margin-top: 24px; padding: 16px; background: #fafafa; border-radius: 8px; border: 1px solid #e0e0e0; }
-    .queue-panel h3 { font-size: 15px; color: #333; margin-bottom: 12px; }
-    .queue-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-    .queue-stat-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; }
-    .queue-stat-card .label { font-size: 12px; color: #888; }
-    .queue-stat-card .value { font-size: 20px; font-weight: 600; color: #1a73e8; }
-    .queue-list { margin-top: 12px; }
-    .queue-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 4px; background: #fff; border: 1px solid #eee; margin-bottom: 6px; }
-    .queue-item .id { font-family: monospace; font-size: 13px; color: #555; }
-    .queue-item .info { font-size: 13px; color: #888; }
+    .config-section { margin-bottom: 28px; }
+    .config-section h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--accent-1);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .live-badge {
+      display: inline-block;
+      background: var(--success-bg);
+      color: var(--success);
+      padding: 2px 10px;
+      border-radius: 50px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 8px;
+      border: 1px solid rgba(0,180,42,0.2);
+    }
+
+    /* ===== 队列状态 ===== */
+    .queue-panel {
+      margin-top: 28px; padding: 20px;
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+    .queue-panel h3 { font-size: 15px; color: var(--text-primary); margin-bottom: 14px; }
+    .queue-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+    .queue-stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xs);
+      padding: 14px;
+      text-align: center;
+    }
+    .queue-stat-card .label { font-size: 12px; color: var(--text-muted); }
+    .queue-stat-card .value { font-size: 22px; font-weight: 700; color: var(--accent-1); }
+    .queue-list { margin-top: 14px; }
+    .queue-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 14px; border-radius: var(--radius-xs);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      margin-bottom: 8px;
+    }
+    .queue-item .id { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-secondary); }
+    .queue-item .info { font-size: 13px; color: var(--text-muted); }
+
+    /* ===== 聊天记录 ===== */
+    .chat-logs-layout { display: flex; gap: 20px; }
+    .chat-logs-sidebar { width: 240px; flex-shrink: 0; }
+    .chat-logs-content { flex: 1; min-width: 0; }
+    .chat-room-list { max-height: 500px; overflow-y: auto; }
+    .chat-room-list::-webkit-scrollbar { width: 5px; }
+    .chat-room-list::-webkit-scrollbar-track { background: transparent; }
+    .chat-room-list::-webkit-scrollbar-thumb { background: #c9cdd4; border-radius: 3px; }
+
+    .sidebar-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .sidebar-card-header {
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sidebar-card-body { padding: 16px; }
+
+    .chat-room-item {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: var(--radius-xs);
+      transition: all 0.2s;
+      margin: 3px 6px;
+    }
+    .chat-room-item:last-child { border-bottom: none; }
+    .chat-room-item:hover { background: rgba(64,128,255,0.06); }
+    .chat-room-item.active { background: rgba(64,128,255,0.1); border: 1px solid rgba(64,128,255,0.25); }
+    .chat-room-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; color: var(--text-primary); }
+    .chat-room-count {
+      background: var(--accent-gradient);
+      color: white;
+      padding: 2px 10px;
+      border-radius: 50px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .chat-filter-form { display: grid; gap: 14px; }
+    .chat-filter-form .form-group { margin-bottom: 0; }
+    .chat-filter-form .form-group input { padding: 9px 12px; font-size: 13px; }
+
+    /* 聊天记录表格 */
+    .chat-logs-table { width: 100%; border-collapse: collapse; }
+    .chat-logs-table th, .chat-logs-table td {
+      padding: 12px 14px; text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 13px;
+    }
+    .chat-logs-table th {
+      background: var(--bg-input);
+      font-weight: 600;
+      color: var(--text-secondary);
+      position: sticky; top: 0;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    .chat-logs-table tr:hover { background: rgba(64,128,255,0.03); }
+    .chat-msg-content { max-width: 250px; word-break: break-all; color: var(--text-primary); }
+    .chat-msg-reply { max-width: 350px; word-break: break-all; color: var(--text-secondary); }
+    .chat-msg-time { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+    .chat-msg-user { color: var(--accent-1); font-weight: 500; }
+    .chat-highlight { background: rgba(255,125,0,0.15); color: #d25f00; padding: 1px 4px; border-radius: 4px; }
+    .chat-delete-btn {
+      padding: 4px 10px; font-size: 11px;
+      background: transparent; color: var(--danger);
+      border: 1px solid rgba(245,63,63,0.25);
+      border-radius: 6px;
+      cursor: pointer; opacity: 0; transition: all 0.2s;
+      font-weight: 500;
+    }
+    .chat-logs-table tr:hover .chat-delete-btn { opacity: 1; }
+    .chat-delete-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
+
+    /* 分页 */
+    .chat-pagination { display: flex; justify-content: center; align-items: center; gap: 6px; padding: 18px 0; flex-wrap: wrap; }
+    .chat-pagination button {
+      padding: 7px 14px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      border-radius: 8px;
+      cursor: pointer; font-size: 13px;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .chat-pagination button:hover:not(:disabled) { border-color: var(--accent-1); color: var(--accent-1); background: rgba(64,128,255,0.04); }
+    .chat-pagination button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .chat-pagination .page-btn { min-width: 36px; padding: 7px 8px; text-align: center; }
+    .chat-pagination .page-btn.active {
+      background: var(--accent-gradient);
+      color: white;
+      border-color: transparent;
+    }
+    .chat-pagination .page-ellipsis { padding: 7px 4px; color: var(--text-muted); font-size: 13px; }
+    .chat-pagination .page-info { font-size: 13px; color: var(--text-muted); }
+    .chat-pagination .page-jump {
+      display: flex; align-items: center; gap: 6px; margin-left: 14px;
+      font-size: 13px; color: var(--text-muted);
+    }
+    .chat-pagination .page-jump input {
+      width: 54px; padding: 6px 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      text-align: center; font-size: 13px;
+      color: var(--text-primary);
+    }
+    .chat-pagination .page-jump input:focus { border-color: var(--accent-1); outline: none; box-shadow: 0 0 0 3px rgba(64,128,255,0.1); }
+
+    /* 统计条 */
+    .chat-stats-bar { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+    .chat-stat-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 16px 24px;
+      text-align: center;
+      min-width: 120px;
+    }
+    .chat-stat-value { font-size: 26px; font-weight: 700; color: var(--accent-1); }
+    .chat-stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* 在线状态文字 */
+    .online-text { color: var(--success); }
+
+    /* ===== 响应式 ===== */
+
+    /* ===== 登录页 ===== */
+    #login-page {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--bg-primary);
+      z-index: 2000;
+      align-items: center; justify-content: center;
+    }
+    #login-page.show { display: flex; }
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 40px 36px;
+      width: 380px;
+      box-shadow: var(--shadow-card);
+      animation: panelIn 0.4s ease;
+    }
+    .login-card .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-card .login-logo h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.5px;
+    }
+    .login-card .login-logo h1 span {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .login-card .login-logo p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+    .login-card .form-group { margin-bottom: 18px; }
+    .login-card .login-error {
+      background: var(--danger-bg);
+      color: var(--danger);
+      padding: 10px 14px;
+      border-radius: var(--radius-xs);
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+      border: 1px solid rgba(245,63,63,0.15);
+    }
+    .login-card .login-error.show { display: block; }
+    .login-card .btn-login {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      margin-top: 4px;
+    }
+
+    /* ===== 用户侧边栏底部 ===== */
+    .sidebar-user {
+      padding: 14px 20px;
+      border-top: 1px solid var(--sidebar-border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar-user .user-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .sidebar-user .user-info {
+      flex: 1; min-width: 0;
+    }
+    .sidebar-user .user-name {
+      font-size: 13px; font-weight: 600; color: var(--text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sidebar-user .user-role {
+      font-size: 11px; color: var(--text-muted);
+    }
+    .sidebar-user .btn-logout {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); font-size: 16px;
+      padding: 4px; border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .sidebar-user .btn-logout:hover {
+      color: var(--danger); background: var(--danger-bg);
+    }
+
+    /* ===== 账号管理 ===== */
+    .users-table {
+      width: 100%; border-collapse: collapse; margin-bottom: 20px;
+    }
+    .users-table th, .users-table td {
+      padding: 12px 14px; text-align: left;
+      border-bottom: 1px solid var(--border-color); font-size: 13px;
+    }
+    .users-table th {
+      background: var(--bg-input); font-weight: 600;
+      color: var(--text-secondary); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .users-table tr:hover { background: rgba(64,128,255,0.03); }
+    .users-table .action-btns { display: flex; gap: 6px; }
+    .users-table .action-btns button {
+      padding: 4px 12px; font-size: 12px;
+      border-radius: 6px; cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card); color: var(--text-secondary);
+      font-weight: 500; transition: all 0.2s;
+    }
+    .users-table .action-btns button:hover {
+      border-color: var(--accent-1); color: var(--accent-1);
+    }
+    .users-table .action-btns button.btn-del:hover {
+      border-color: var(--danger); color: var(--danger);
+      background: var(--danger-bg);
+    }
+    .add-user-form {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+    }
+    .add-user-form h4 {
+      font-size: 14px; font-weight: 600; margin-bottom: 14px;
+      color: var(--text-primary);
+    }
+    .add-user-form .form-row {
+      display: flex; gap: 12px; align-items: flex-end;
+    }
+    .add-user-form .form-group { flex: 1; margin-bottom: 0; }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        position: relative;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--sidebar-border);
+      }
+      .sidebar-logo { padding: 16px 20px; }
+      .sidebar-nav {
+        display: flex;
+        gap: 4px;
+        padding: 8px 12px;
+        overflow-x: auto;
+      }
+      .nav-item {
+        padding: 8px 14px;
+        font-size: 13px;
+        margin-bottom: 0;
+        border-radius: 8px;
+      }
+      .nav-item .nav-icon { font-size: 16px; }
+      .sidebar-footer { display: none; }
+      .layout { flex-direction: column; }
+      .main-content { margin-left: 0; padding: 16px; }
+      .chat-logs-layout { flex-direction: column; }
+      .chat-logs-sidebar { width: 100%; }
+      .chat-room-list { max-height: 200px; }
+    }
   </style>
 </head>
 <body>
-<div class="container">
-  <h1>RAG 知识库管理系统</h1>
-  <div class="tabs">
-    <div class="tab active" data-tab="wechat">微信登录</div>
-    <div class="tab" data-tab="documents">文档管理</div>
-    <div class="tab" data-tab="bot-config">机器人配置</div>
-    <div class="tab" data-tab="runtime-config">运行配置 <span class="live-badge">热加载</span></div>
-    <div class="tab" data-tab="model-config">模型配置</div>
+
+<!-- 登录页 -->
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>微信<span>智能客服</span></h1>
+      <p>管理平台登录</p>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="login-username" placeholder="请输入用户名" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="login-password" placeholder="请输入密码" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-login" onclick="handleLogin()">登 录</button>
   </div>
+</div>
 
-  <!-- 微信登录 -->
-  <div class="panel active" id="panel-wechat">
-    <div class="wechat-card">
-      <div class="wechat-status">
-        <span>微信状态：</span>
-        <span class="status-badge" id="wechat-status-badge">检测中...</span>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <h1>微信<span>智能客服</span><br>管理平台</h1>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-item active" data-tab="wechat">
+        <span class="nav-icon">📱</span>微信登录
       </div>
-      <div id="wechat-qrcode-box" style="display:none">
-        <div class="qrcode-box">
-          <img id="wechat-qrcode-img" src="" alt="微信二维码">
-          <p>请使用微信扫码登录</p>
+      <div class="nav-item" data-tab="chat-logs">
+        <span class="nav-icon">💬</span>聊天记录
+      </div>
+      <div class="nav-item" data-tab="documents">
+        <span class="nav-icon">📁</span>文档管理
+      </div>
+      <div class="nav-item" data-tab="bot-config">
+        <span class="nav-icon">🤖</span>机器人配置
+      </div>
+      <div class="nav-item" data-tab="runtime-config">
+        <span class="nav-icon">🔧</span>运行配置
+        <span class="live-badge">热加载</span>
+      </div>
+      <div class="nav-item" data-tab="model-config">
+        <span class="nav-icon">🧠</span>模型配置
+      </div>
+      <div class="nav-item" data-tab="user-management">
+        <span class="nav-icon">👥</span>账号管理
+      </div>
+    </div>
+    <div class="sidebar-user" id="sidebar-user" style="display:none;">
+      <div class="user-avatar" id="user-avatar"></div>
+      <div class="user-info">
+        <div class="user-name" id="user-display-name"></div>
+        <div class="user-role">管理员</div>
+      </div>
+      <button class="btn-logout" title="退出登录" onclick="handleLogout()">⏻</button>
+    </div>
+    <div class="sidebar-footer" id="sidebar-footer-version">v3.0</div>
+  </nav>
+
+  <div class="main-content">
+    <!-- 微信登录 -->
+    <div class="panel active" id="panel-wechat">
+      <div class="wechat-card">
+        <div class="wechat-status">
+          <span>微信状态：</span>
+          <span class="status-badge" id="wechat-status-badge">检测中...</span>
         </div>
-      </div>
-      <div id="wechat-online-info" style="display:none">
-        <p style="color:#2e7d32">✅ 微信已登录，机器人正常运行</p>
-      </div>
-      <div class="status-refresh">
-        <button class="btn btn-primary" onclick="refreshWechatStatus()">刷新状态</button>
-        <button class="btn btn-warning" onclick="triggerRelogin()">重新登录</button>
-        <span style="color:#666;font-size:12px">每5秒自动刷新</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- 文档管理 -->
-  <div class="panel" id="panel-documents">
-    <div class="toolbar">
-      <button class="btn btn-primary" onclick="showUploadModal()">上传文档</button>
-      <button class="btn btn-success" onclick="showFolderModal()">新建文件夹</button>
-      <button class="btn btn-danger" id="btn-delete" onclick="deleteSelected()" disabled>删除选中</button>
-      <button class="btn btn-primary" id="btn-edit" onclick="editSelected()" disabled>编辑</button>
-      <button class="btn btn-primary" id="btn-download" onclick="downloadSelected()" disabled>下载</button>
-      <button class="btn btn-success" onclick="rebuildIndex()">重建索引</button>
-    </div>
-    <div class="file-tree" id="file-tree"></div>
-    <div class="editor-area" id="editor-area" style="display:none">
-      <h3 id="editor-title">编辑文件</h3>
-      <textarea id="editor-content"></textarea>
-      <div style="margin-top:10px;display:flex;gap:10px">
-        <button class="btn btn-primary" onclick="saveContent()">保存</button>
-        <button class="btn" style="background:#e0e0e0" onclick="closeEditor()">取消</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 机器人配置 -->
-  <div class="panel" id="panel-bot-config">
-    <div class="form-group">
-      <label>机器人名称</label>
-      <input type="text" id="bot-name">
-      <div class="hint">用于从消息中去除@部分，不再要求必须@才回复</div>
-    </div>
-    <div class="form-group">
-      <label>群聊白名单（回车添加，支持通配符 * 和 ?）</label>
-      <div class="tag-input" id="room-tags"></div>
-      <div class="hint">例如：技术*支持 可匹配「技术1群支持」，客户?群 可匹配「客户A群」</div>
-    </div>
-    <div class="form-group">
-      <label>联系人白名单（回车添加）</label>
-      <div class="tag-input" id="alias-tags"></div>
-    </div>
-    <div class="form-group">
-      <label>问题关键词（回车添加）</label>
-      <div class="tag-input" id="keyword-tags"></div>
-      <div class="hint">命中关键词的消息直接回复，跳过AI意图识别（节省API调用）；留空则全部走AI意图识别</div>
-    </div>
-    <div class="form-group">
-      <label>意图识别模型</label>
-      <input type="text" id="intent-model" placeholder="deepseek-v4-flash">
-      <div class="hint">用于判断群聊消息是否为提问，建议用快速廉价模型</div>
-    </div>
-    <button class="btn btn-primary" onclick="saveBotConfig()">保存配置</button>
-  </div>
-
-  <!-- 运行配置（热加载） -->
-  <div class="panel" id="panel-runtime-config">
-    <div class="config-section">
-      <h3>📨 队列配置</h3>
-      <div class="config-grid">
-        <div class="form-group">
-          <label>任务过期时间（毫秒）</label>
-          <input type="number" id="cfg-task-expire" min="10000" max="600000" step="1000">
-          <div class="hint">超过此时间的任务不再发送，默认 120000</div>
+        <div id="wechat-qrcode-box" style="display:none">
+          <div class="qrcode-box">
+            <img id="wechat-qrcode-img" src="" alt="微信二维码">
+            <p>请使用微信扫码登录</p>
+          </div>
         </div>
-        <div class="form-group">
-          <label>单群最大队列长度</label>
-          <input type="number" id="cfg-queue-max-length" min="1" max="100">
-          <div class="hint">超出时丢弃最旧任务，默认 10</div>
+        <div id="wechat-online-info" style="display:none">
+          <p class="online-text">✅ 微信已登录，机器人正常运行</p>
+        </div>
+        <div class="status-refresh">
+          <button class="btn btn-primary" onclick="refreshWechatStatus()">刷新状态</button>
+          <button class="btn btn-warning" onclick="triggerRelogin()">重新登录</button>
+          <span class="hint-text">每5秒自动刷新</span>
         </div>
       </div>
     </div>
 
-    <div class="config-section">
-      <h3>⏱️ 发送频率控制</h3>
-      <div class="config-grid">
-        <div class="form-group">
-          <label>发送冷却间隔（毫秒）</label>
-          <input type="number" id="cfg-send-cooldown" min="0" max="30000" step="100">
-          <div class="hint">两条消息间最小间隔，0 表示无冷却，默认 0</div>
+    <!-- 聊天记录 -->
+    <div class="panel" id="panel-chat-logs">
+      <div class="chat-stats-bar">
+        <div class="chat-stat-item"><div class="chat-stat-value" id="stat-total">-</div><div class="chat-stat-label">总消息数</div></div>
+        <div class="chat-stat-item"><div class="chat-stat-value" id="stat-rooms">-</div><div class="chat-stat-label">群聊数</div></div>
+        <div class="chat-stat-item"><div class="chat-stat-value" id="stat-today">-</div><div class="chat-stat-label">今日消息</div></div>
+      </div>
+      <div class="chat-logs-layout">
+        <div class="chat-logs-sidebar">
+          <div class="sidebar-card">
+            <div class="sidebar-card-header">🔍 筛选</div>
+            <div class="sidebar-card-body">
+              <form class="chat-filter-form" id="chatFilterForm">
+                <div class="form-group">
+                  <label>开始日期</label>
+                  <input type="date" id="chat-start-date">
+                </div>
+                <div class="form-group">
+                  <label>结束日期</label>
+                  <input type="date" id="chat-end-date">
+                </div>
+                <div class="form-group">
+                  <label>关键字</label>
+                  <input type="text" id="chat-keyword" placeholder="搜索内容...">
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button type="submit" class="btn btn-primary" style="flex:1;padding:9px;">查询</button>
+                  <button type="button" class="btn btn-ghost" style="padding:9px 14px;" onclick="chatResetFilter()">重置</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="sidebar-card">
+            <div class="sidebar-card-header">
+              <span>💬 群列表</span>
+              <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px;border-radius:8px;" onclick="chatClearRoom()">全部</button>
+            </div>
+            <div class="chat-room-list" id="chat-room-list"><p style="padding:14px;color:var(--text-muted);font-size:13px;">加载中...</p></div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>频率限制窗口（毫秒）</label>
-          <input type="number" id="cfg-rate-window" min="1000" max="600000" step="1000">
-          <div class="hint">在此窗口内最多回复指定次数，默认 60000</div>
-        </div>
-        <div class="form-group">
-          <label>窗口内最大回复数</label>
-          <input type="number" id="cfg-rate-max" min="1" max="200">
-          <div class="hint">频率限制窗口内最大回复数，默认 20</div>
-        </div>
-        <div class="form-group">
-          <label>消息最大容忍时间（秒）</label>
-          <input type="number" id="cfg-msg-max-age" min="5" max="600">
-          <div class="hint">超过此时间的消息忽略，默认 60</div>
+        <div class="chat-logs-content">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-weight:600;font-size:15px;">📝 聊天记录</span>
+            <span id="chat-result-count" style="font-size:12px;color:var(--text-muted);"></span>
+          </div>
+          <div id="chat-logs-container" style="overflow-x:auto;"></div>
+          <div class="chat-pagination" id="chat-pagination" style="display:none;">
+            <button onclick="chatPrevPage()" id="chat-prev-btn">上一页</button>
+            <span id="chat-page-buttons"></span>
+            <button onclick="chatNextPage()" id="chat-next-btn">下一页</button>
+            <span class="page-jump">
+              跳至 <input type="number" id="chat-jump-input" min="1" value="1"> 页
+              <button onclick="chatJumpPage()">确定</button>
+            </span>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="config-section">
-      <h3>🧠 意图识别配置</h3>
-      <div class="config-grid">
-        <div class="form-group">
-          <label>意图识别模型</label>
-          <input type="text" id="cfg-intent-model" placeholder="deepseek-v4-flash">
-          <div class="hint">判断群聊消息是否为提问的模型</div>
-        </div>
-        <div class="form-group">
-          <label>意图识别超时（毫秒）</label>
-          <input type="number" id="cfg-intent-timeout" min="1000" max="30000" step="500">
-          <div class="hint">超时后默认视为提问（fail-open），默认 5000</div>
+    <!-- 文档管理 -->
+    <div class="panel" id="panel-documents">
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="showUploadModal()">上传文档</button>
+        <button class="btn btn-success" onclick="showFolderModal()">新建文件夹</button>
+        <button class="btn btn-danger" id="btn-delete" onclick="deleteSelected()" disabled>删除选中</button>
+        <button class="btn btn-primary" id="btn-edit" onclick="editSelected()" disabled>编辑</button>
+        <button class="btn btn-primary" id="btn-download" onclick="downloadSelected()" disabled>下载</button>
+        <button class="btn btn-success" onclick="rebuildIndex()">重建索引</button>
+      </div>
+      <div class="file-tree" id="file-tree"></div>
+      <div class="editor-area" id="editor-area" style="display:none">
+        <h3 id="editor-title">编辑文件</h3>
+        <textarea id="editor-content"></textarea>
+        <div style="margin-top:12px;display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="saveContent()">保存</button>
+          <button class="btn btn-ghost" onclick="closeEditor()">取消</button>
         </div>
       </div>
     </div>
 
-    <button class="btn btn-primary" onclick="saveRuntimeConfig()">保存并实时生效</button>
+    <!-- 机器人配置 -->
+    <div class="panel" id="panel-bot-config">
+      <div class="form-group">
+        <label>机器人名称</label>
+        <input type="text" id="bot-name">
+        <div class="hint">用于从消息中去除@部分，不再要求必须@才回复</div>
+      </div>
+      <div class="form-group">
+        <label>群聊白名单（回车添加，支持通配符 * 和 ?）</label>
+        <div class="tag-input" id="room-tags"></div>
+        <div class="hint">例如：技术*支持 可匹配「技术1群支持」，客户?群 可匹配「客户A群」</div>
+      </div>
+      <div class="form-group">
+        <label>联系人白名单（回车添加）</label>
+        <div class="tag-input" id="alias-tags"></div>
+      </div>
+      <div class="form-group">
+        <label>问题关键词（回车添加）</label>
+        <div class="tag-input" id="keyword-tags"></div>
+        <div class="hint">命中关键词的消息直接回复，跳过AI意图识别（节省API调用）；留空则全部走AI意图识别</div>
+      </div>
+      <div class="form-group">
+        <label>意图识别模型</label>
+        <input type="text" id="intent-model" placeholder="deepseek-v4-flash">
+        <div class="hint">用于判断群聊消息是否为提问，建议用快速廉价模型</div>
+      </div>
+      <button class="btn btn-primary" onclick="saveBotConfig()">保存配置</button>
+    </div>
 
-    <!-- 队列状态 -->
-    <div class="queue-panel">
-      <h3>📊 队列实时状态 <span style="font-size:12px;color:#888;font-weight:normal">（每5秒刷新）</span></h3>
-      <div class="queue-stats-grid" id="queue-stats-grid"></div>
-      <div class="queue-list" id="queue-list"></div>
-    </div>
-  </div>
+    <!-- 运行配置（热加载） -->
+    <div class="panel" id="panel-runtime-config">
+      <div class="config-section">
+        <h3>📨 队列配置</h3>
+        <div class="config-grid">
+          <div class="form-group">
+            <label>任务过期时间（毫秒）</label>
+            <input type="number" id="cfg-task-expire" min="10000" max="600000" step="1000">
+            <div class="hint">超过此时间的任务不再发送，默认 120000</div>
+          </div>
+          <div class="form-group">
+            <label>单群最大队列长度</label>
+            <input type="number" id="cfg-queue-max-length" min="1" max="100">
+            <div class="hint">超出时丢弃最旧任务，默认 10</div>
+          </div>
+        </div>
+      </div>
 
-  <!-- 模型配置 -->
-  <div class="panel" id="panel-model-config">
-    <div class="form-group">
-      <label>API Key</label>
-      <input type="password" id="cfg-api-key">
+      <div class="config-section">
+        <h3>⏱️ 发送频率控制</h3>
+        <div class="config-grid">
+          <div class="form-group">
+            <label>发送冷却间隔（毫秒）</label>
+            <input type="number" id="cfg-send-cooldown" min="0" max="30000" step="100">
+            <div class="hint">两条消息间最小间隔，0 表示无冷却，默认 0</div>
+          </div>
+          <div class="form-group">
+            <label>频率限制窗口（毫秒）</label>
+            <input type="number" id="cfg-rate-window" min="1000" max="600000" step="1000">
+            <div class="hint">在此窗口内最多回复指定次数，默认 60000</div>
+          </div>
+          <div class="form-group">
+            <label>窗口内最大回复数</label>
+            <input type="number" id="cfg-rate-max" min="1" max="200">
+            <div class="hint">频率限制窗口内最大回复数，默认 20</div>
+          </div>
+          <div class="form-group">
+            <label>消息最大容忍时间（秒）</label>
+            <input type="number" id="cfg-msg-max-age" min="5" max="600">
+            <div class="hint">超过此时间的消息忽略，默认 60</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3>🧠 意图识别配置</h3>
+        <div class="config-grid">
+          <div class="form-group">
+            <label>意图识别模型</label>
+            <input type="text" id="cfg-intent-model" placeholder="deepseek-v4-flash">
+            <div class="hint">判断群聊消息是否为提问的模型</div>
+          </div>
+          <div class="form-group">
+            <label>意图识别超时（毫秒）</label>
+            <input type="number" id="cfg-intent-timeout" min="1000" max="30000" step="500">
+            <div class="hint">超时后默认视为提问（fail-open），默认 5000</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3>🎬 视频理解配置 <span class="live-badge">热加载</span></h3>
+        <div class="config-grid">
+          <div class="form-group">
+            <label>启用视频理解</label>
+            <select id="cfg-video-enabled"><option value="true">启用</option><option value="false">禁用</option></select>
+            <div class="hint">关闭后收到视频消息不再处理，节省 API 调用</div>
+          </div>
+          <div class="form-group">
+            <label>视频大小上限（字节）</label>
+            <input type="number" id="cfg-video-max-size" min="1048576" max="104857600" step="1048576">
+            <div class="hint">超过此大小的视频不处理，默认 52428800（50MB）</div>
+          </div>
+          <div class="form-group">
+            <label>最大抽取帧数</label>
+            <input type="number" id="cfg-video-max-frames" min="1" max="10">
+            <div class="hint">从视频中均匀抽取的关键帧数量，默认 3（帧越多越详细但 API 费用越高）</div>
+          </div>
+          <div class="form-group">
+            <label>帧图片质量</label>
+            <input type="number" id="cfg-video-frame-quality" min="1" max="31">
+            <div class="hint">JPEG 质量 1-31，越小质量越高，默认 2</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveRuntimeConfig()">保存并实时生效</button>
+
+      <!-- 队列状态 -->
+      <div class="queue-panel">
+        <h3>📊 队列实时状态 <span style="font-size:12px;color:var(--text-muted);font-weight:normal">（每5秒刷新）</span></h3>
+        <div class="queue-stats-grid" id="queue-stats-grid"></div>
+        <div class="queue-list" id="queue-list"></div>
+      </div>
     </div>
-    <div class="form-group">
-      <label>API Base URL</label>
-      <input type="text" id="cfg-base-url">
+
+    <!-- 模型配置 -->
+    <div class="panel" id="panel-model-config">
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="cfg-api-key">
+      </div>
+      <div class="form-group">
+        <label>API Base URL</label>
+        <input type="text" id="cfg-base-url">
+      </div>
+      <div class="form-group">
+        <label>文本对话模型</label>
+        <input type="text" id="cfg-model" placeholder="用于普通文本对话">
+      </div>
+      <div class="form-group">
+        <label>图片理解模型</label>
+        <input type="text" id="cfg-vision-model" placeholder="需支持多模态输入">
+      </div>
+      <div class="form-group">
+        <label>图片理解最大输出 Token</label>
+        <input type="number" id="cfg-vision-max-tokens" min="100" max="4000" placeholder="1000">
+      </div>
+      <div class="form-group">
+        <label>RAG 模型</label>
+        <input type="text" id="cfg-rag-model">
+      </div>
+      <div class="form-group">
+        <label>RAG 启用</label>
+        <select id="cfg-rag-enabled"><option value="true">启用</option><option value="false">禁用</option></select>
+      </div>
+      <div class="form-group">
+        <label>RAG Top K</label>
+        <input type="number" id="cfg-rag-topk" min="1" max="10">
+      </div>
+      <button class="btn btn-primary" onclick="saveModelConfig()">保存配置</button>
     </div>
-    <div class="form-group">
-      <label>文本对话模型</label>
-      <input type="text" id="cfg-model" placeholder="用于普通文本对话">
+
+    <!-- 账号管理 -->
+    <div class="panel" id="panel-user-management">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3 style="font-size:16px;font-weight:600;">用户列表</h3>
+      </div>
+      <table class="users-table" id="users-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>用户名</th>
+            <th>显示名称</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px;">加载中...</td></tr>
+        </tbody>
+      </table>
+
+      <div class="add-user-form">
+        <h4>添加新用户</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>用户名</label>
+            <input type="text" id="new-username" placeholder="至少3个字符">
+          </div>
+          <div class="form-group">
+            <label>密码</label>
+            <input type="password" id="new-password" placeholder="至少6个字符">
+          </div>
+          <div class="form-group">
+            <label>显示名称</label>
+            <input type="text" id="new-display-name" placeholder="可选">
+          </div>
+          <button class="btn btn-primary" style="margin-bottom:0;white-space:nowrap;" onclick="addUser()">添加</button>
+        </div>
+      </div>
     </div>
-    <div class="form-group">
-      <label>图片理解模型</label>
-      <input type="text" id="cfg-vision-model" placeholder="需支持多模态输入">
-    </div>
-    <div class="form-group">
-      <label>图片理解最大输出 Token</label>
-      <input type="number" id="cfg-vision-max-tokens" min="100" max="4000" placeholder="1000">
-    </div>
-    <div class="form-group">
-      <label>RAG 模型</label>
-      <input type="text" id="cfg-rag-model">
-    </div>
-    <div class="form-group">
-      <label>RAG 启用</label>
-      <select id="cfg-rag-enabled"><option value="true">启用</option><option value="false">禁用</option></select>
-    </div>
-    <div class="form-group">
-      <label>RAG Top K</label>
-      <input type="number" id="cfg-rag-topk" min="1" max="10">
-    </div>
-    <button class="btn btn-primary" onclick="saveModelConfig()">保存配置</button>
   </div>
 </div>
 
@@ -292,7 +1088,7 @@
       <input type="file" id="upload-input" accept=".md,.txt,.docx,.doc,.pdf">
     </div>
     <div class="modal-actions">
-      <button class="btn" style="background:#e0e0e0" onclick="closeModal('upload-modal')">关闭</button>
+      <button class="btn btn-ghost" onclick="closeModal('upload-modal')">关闭</button>
     </div>
   </div>
 </div>
@@ -307,7 +1103,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="createFolder()">创建</button>
-      <button class="btn" style="background:#e0e0e0" onclick="closeModal('folder-modal')">取消</button>
+      <button class="btn btn-ghost" onclick="closeModal('folder-modal')">取消</button>
     </div>
   </div>
 </div>
@@ -315,18 +1111,260 @@
 <script>
 let selectedFile = null;
 let documents = [];
+let currentUser = null; // 当前登录用户
 
-// Tabs
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+// ========== 认证相关 ==========
+
+/**
+ * 页面加载时检查登录状态
+ */
+async function checkLogin() {
+  try {
+    const res = await fetch('/api/auth/me');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.user) {
+        currentUser = data.user;
+        showMainApp();
+        return;
+      }
+    }
+  } catch (e) {
+    console.error('检查登录状态失败:', e);
+  }
+  showLoginPage();
+}
+
+function showMainApp() {
+  document.getElementById('login-page').classList.remove('show');
+  document.getElementById('sidebar-user').style.display = 'flex';
+  document.getElementById('sidebar-footer-version').style.display = 'none';
+
+  // 更新侧边栏用户信息
+  const displayName = currentUser.displayName || currentUser.username;
+  document.getElementById('user-display-name').textContent = displayName;
+  document.getElementById('user-avatar').textContent = displayName.charAt(0).toUpperCase();
+
+  // 初始化页面数据
+  loadDocuments();
+  startWechatAutoRefresh();
+  chatInitDates();
+}
+
+function showLoginPage() {
+  document.getElementById('login-page').classList.add('show');
+  document.getElementById('sidebar-user').style.display = 'none';
+  document.getElementById('sidebar-footer-version').style.display = 'block';
+}
+
+/**
+ * 登录处理
+ */
+async function handleLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errorEl = document.getElementById('login-error');
+
+  if (!username || !password) {
+    errorEl.textContent = '请输入用户名和密码';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      currentUser = data.user;
+      errorEl.classList.remove('show');
+      document.getElementById('login-username').value = '';
+      document.getElementById('login-password').value = '';
+      showMainApp();
+    } else {
+      errorEl.textContent = data.error || '登录失败';
+      errorEl.classList.add('show');
+    }
+  } catch (e) {
+    errorEl.textContent = '网络错误，请重试';
+    errorEl.classList.add('show');
+  }
+}
+
+/**
+ * 登出处理
+ */
+async function handleLogout() {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch (e) { /* ignore */ }
+  currentUser = null;
+  // 停止所有定时器
+  if (wechatRefreshInterval) { clearInterval(wechatRefreshInterval); wechatRefreshInterval = null; }
+  stopQueueRefresh();
+  showLoginPage();
+}
+
+/**
+ * 全局 401 拦截：未登录自动跳转登录页
+ */
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+  const response = await originalFetch.apply(this, args);
+  if (response.status === 401 && currentUser) {
+    // 会话过期，跳转登录页
+    currentUser = null;
+    if (wechatRefreshInterval) { clearInterval(wechatRefreshInterval); wechatRefreshInterval = null; }
+    stopQueueRefresh();
+    showLoginPage();
+    toast('登录已过期，请重新登录', 'error');
+  }
+  return response;
+};
+
+// 登录表单回车提交
+document.getElementById('login-password').addEventListener('keypress', e => {
+  if (e.key === 'Enter') handleLogin();
+});
+document.getElementById('login-username').addEventListener('keypress', e => {
+  if (e.key === 'Enter') document.getElementById('login-password').focus();
+});
+
+// ========== 账号管理 ==========
+
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/auth/users').then(r => r.json());
+    if (res.success) renderUsers(res.users);
+    else toast(res.error || '获取用户列表失败', 'error');
+  } catch (e) {
+    toast('获取用户列表失败', 'error');
+  }
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('users-tbody');
+  if (!users || !users.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px;">暂无用户</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => {
+    const isSelf = currentUser && currentUser.id === u.id;
+    const createdAt = u.created_at ? u.created_at.replace('T', ' ').substring(0, 16) : '-';
+    return `<tr>
+      <td>${u.id}</td>
+      <td>${escapeHtml(u.username)}</td>
+      <td>${escapeHtml(u.display_name || '-')}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${createdAt}</td>
+      <td>
+        <div class="action-btns">
+          <button onclick="editUserPrompt(${u.id}, '${escapeHtml(u.display_name || u.username)}')">编辑</button>
+          <button onclick="changePasswordPrompt(${u.id}, '${escapeHtml(u.username)}')">改密</button>
+          ${isSelf ? '' : `<button class="btn-del" onclick="deleteUserConfirm(${u.id}, '${escapeHtml(u.username)}')">删除</button>`}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function addUser() {
+  const username = document.getElementById('new-username').value.trim();
+  const password = document.getElementById('new-password').value;
+  const displayName = document.getElementById('new-display-name').value.trim();
+
+  if (!username || !password) {
+    toast('请输入用户名和密码', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/auth/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, displayName })
+    }).then(r => r.json());
+
+    if (res.success) {
+      toast('用户创建成功');
+      document.getElementById('new-username').value = '';
+      document.getElementById('new-password').value = '';
+      document.getElementById('new-display-name').value = '';
+      loadUsers();
+    } else {
+      toast(res.error || '创建失败', 'error');
+    }
+  } catch (e) {
+    toast('创建用户失败', 'error');
+  }
+}
+
+function editUserPrompt(id, currentName) {
+  const newName = prompt('修改显示名称：', currentName);
+  if (newName === null || newName === currentName) return;
+
+  fetch(`/api/auth/users/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ displayName: newName })
+  }).then(r => r.json()).then(res => {
+    if (res.success) {
+      toast('修改成功');
+      // 如果修改的是自己，更新侧边栏
+      if (currentUser && currentUser.id === id) {
+        currentUser.displayName = newName;
+        document.getElementById('user-display-name').textContent = newName;
+        document.getElementById('user-avatar').textContent = newName.charAt(0).toUpperCase();
+      }
+      loadUsers();
+    } else {
+      toast(res.error || '修改失败', 'error');
+    }
+  });
+}
+
+function changePasswordPrompt(id, username) {
+  const newPass = prompt(`为用户 ${username} 设置新密码（至少6个字符）：`);
+  if (!newPass) return;
+  if (newPass.length < 6) { toast('密码至少6个字符', 'error'); return; }
+
+  fetch(`/api/auth/users/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: newPass })
+  }).then(r => r.json()).then(res => {
+    if (res.success) toast('密码修改成功');
+    else toast(res.error || '修改失败', 'error');
+  });
+}
+
+function deleteUserConfirm(id, username) {
+  if (!confirm(`确定删除用户 "${username}" 吗？此操作不可恢复。`)) return;
+
+  fetch(`/api/auth/users/${id}`, { method: 'DELETE' })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) { toast('用户已删除'); loadUsers(); }
+      else toast(res.error || '删除失败', 'error');
+    });
+}
+
+// Navigation
+document.querySelectorAll('.nav-item').forEach(nav => {
+  nav.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
-    if (tab.dataset.tab === 'bot-config') loadBotConfig();
-    if (tab.dataset.tab === 'model-config') loadModelConfig();
-    if (tab.dataset.tab === 'runtime-config') { loadRuntimeConfig(); startQueueRefresh(); }
+    nav.classList.add('active');
+    document.getElementById('panel-' + nav.dataset.tab).classList.add('active');
+    if (nav.dataset.tab === 'bot-config') loadBotConfig();
+    if (nav.dataset.tab === 'model-config') loadModelConfig();
+    if (nav.dataset.tab === 'runtime-config') { loadRuntimeConfig(); startQueueRefresh(); }
     else { stopQueueRefresh(); }
+    if (nav.dataset.tab === 'chat-logs') { chatLoadStats(); chatLoadRooms(); chatLoadLogs(); }
+    if (nav.dataset.tab === 'user-management') loadUsers();
   });
 });
 
@@ -506,11 +1544,9 @@ async function loadBotConfig() {
 
 function renderTags(containerId, items) {
   const container = document.getElementById(containerId);
-  // 保留已有 tags，仅在空时初始化
   if (container.querySelectorAll('.tag').length === 0 && container.querySelector('input') === null) {
     container.innerHTML = '';
   }
-  // 清除已有内容和 input
   container.innerHTML = '';
   items.forEach(item => {
     const tag = document.createElement('span');
@@ -567,6 +1603,10 @@ async function loadRuntimeConfig() {
     document.getElementById('cfg-msg-max-age').value = res.config.MSG_MAX_AGE;
     document.getElementById('cfg-intent-model').value = res.config.INTENT_MODEL;
     document.getElementById('cfg-intent-timeout').value = res.config.INTENT_TIMEOUT;
+    document.getElementById('cfg-video-enabled').value = res.config.VIDEO_ENABLED || 'true';
+    document.getElementById('cfg-video-max-size').value = res.config.VIDEO_MAX_SIZE || '52428800';
+    document.getElementById('cfg-video-max-frames').value = res.config.VIDEO_MAX_FRAMES || '3';
+    document.getElementById('cfg-video-frame-quality').value = res.config.VIDEO_FRAME_QUALITY || '2';
   }
 }
 
@@ -580,6 +1620,10 @@ async function saveRuntimeConfig() {
     MSG_MAX_AGE: document.getElementById('cfg-msg-max-age').value,
     INTENT_MODEL: document.getElementById('cfg-intent-model').value,
     INTENT_TIMEOUT: document.getElementById('cfg-intent-timeout').value,
+    VIDEO_ENABLED: document.getElementById('cfg-video-enabled').value,
+    VIDEO_MAX_SIZE: document.getElementById('cfg-video-max-size').value,
+    VIDEO_MAX_FRAMES: document.getElementById('cfg-video-max-frames').value,
+    VIDEO_FRAME_QUALITY: document.getElementById('cfg-video-frame-quality').value,
   };
   const res = await fetch('/api/config/runtime', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }).then(r=>r.json());
   if (res.success) toast('运行配置已实时生效 ✅'); else toast(res.error,'error');
@@ -607,7 +1651,7 @@ async function refreshQueueStats() {
     const queues = res.queues || {};
     const queueIds = Object.keys(queues);
     if (queueIds.length === 0) {
-      list.innerHTML = '<p style="color:#888;font-size:13px;padding:8px">当前无活跃队列</p>';
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:8px">当前无活跃队列</p>';
     } else {
       list.innerHTML = queueIds.map(id => {
         const q = queues[id];
@@ -666,8 +1710,8 @@ async function saveModelConfig() {
   if (res.success) toast('模型配置保存成功，已实时生效'); else toast(res.error,'error');
 }
 
-// Init
-loadDocuments();
+// Init - check login first
+checkLogin();
 
 // Wechat status
 let wechatRefreshInterval = null;
@@ -729,9 +1773,9 @@ function startWechatAutoRefresh() {
 }
 
 // 切换到微信标签页时启动刷新，离开时停止
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    if (tab.dataset.tab === 'wechat') {
+document.querySelectorAll('.nav-item').forEach(nav => {
+  nav.addEventListener('click', () => {
+    if (nav.dataset.tab === 'wechat') {
       startWechatAutoRefresh();
     } else if (wechatRefreshInterval) {
       clearInterval(wechatRefreshInterval);
@@ -740,8 +1784,197 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-// 页面加载时启动刷新（因为微信标签页默认 active）
-startWechatAutoRefresh();
+// 页面加载时启动刷新 - 已移至 showMainApp() 中，登录成功后才启动
+
+// ==================== 聊天记录 ====================
+let chatCurrentPage = 1;
+let chatPageSize = 50;
+let chatTotalRecords = 0;
+let chatCurrentRoomId = null;
+
+function chatInitDates() {
+  const today = new Date();
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  document.getElementById('chat-start-date').value = weekAgo.toISOString().substring(0, 10);
+  document.getElementById('chat-end-date').value = today.toISOString().substring(0, 10);
+}
+
+async function chatLoadStats() {
+  try {
+    const res = await fetch('/api/stats').then(r => r.json());
+    if (res.success) {
+      document.getElementById('stat-total').textContent = res.totalMessages;
+      document.getElementById('stat-rooms').textContent = res.totalRooms;
+      document.getElementById('stat-today').textContent = res.todayMessages;
+    }
+  } catch (e) { console.error('聊天统计失败:', e); }
+}
+
+async function chatLoadRooms() {
+  try {
+    const res = await fetch('/api/rooms').then(r => r.json());
+    if (res.success) chatRenderRooms(res.rooms);
+  } catch (e) {
+    document.getElementById('chat-room-list').innerHTML = '<p style="padding:14px;color:var(--text-muted);">加载失败</p>';
+  }
+}
+
+function chatRenderRooms(rooms) {
+  if (!rooms.length) {
+    document.getElementById('chat-room-list').innerHTML = '<p style="padding:14px;color:var(--text-muted);">暂无记录</p>';
+    return;
+  }
+  document.getElementById('chat-room-list').innerHTML = rooms.map(r => `
+    <div class="chat-room-item ${chatCurrentRoomId === r.room_id ? 'active' : ''}" onclick="chatSelectRoom('${r.room_id}')">
+      <span class="chat-room-name" title="${chatEscapeHtml(r.room_name || '未知群')}">${chatEscapeHtml(r.room_name || '未知群')}</span>
+      <span class="chat-room-count">${r.count}</span>
+    </div>
+  `).join('');
+}
+
+function chatSelectRoom(roomId) {
+  chatCurrentRoomId = chatCurrentRoomId === roomId ? null : roomId;
+  chatCurrentPage = 1;
+  chatLoadLogs();
+  chatLoadRooms();
+}
+
+function chatClearRoom() {
+  chatCurrentRoomId = null;
+  chatCurrentPage = 1;
+  chatLoadLogs();
+  chatLoadRooms();
+}
+
+async function chatLoadLogs() {
+  const startDate = document.getElementById('chat-start-date').value;
+  const endDate = document.getElementById('chat-end-date').value;
+  const keyword = document.getElementById('chat-keyword').value;
+  const params = new URLSearchParams({ startDate, endDate, page: chatCurrentPage, pageSize: chatPageSize });
+  if (chatCurrentRoomId) params.append('roomId', chatCurrentRoomId);
+  if (keyword) params.append('keyword', keyword);
+
+  document.getElementById('chat-logs-container').innerHTML = '<p style="padding:40px;text-align:center;color:var(--text-muted);">加载中...</p>';
+
+  try {
+    const res = await fetch(`/api/logs?${params}`).then(r => r.json());
+    if (res.success) {
+      chatTotalRecords = res.total;
+      chatRenderLogs(res.list, keyword);
+      chatRenderPagination();
+    } else {
+      document.getElementById('chat-logs-container').innerHTML = `<p style="padding:40px;text-align:center;color:var(--danger);">${chatEscapeHtml(res.error)}</p>`;
+    }
+  } catch (e) {
+    document.getElementById('chat-logs-container').innerHTML = '<p style="padding:40px;text-align:center;color:var(--text-muted);">加载失败</p>';
+  }
+}
+
+function chatRenderLogs(logs, keyword) {
+  if (!logs.length) {
+    document.getElementById('chat-logs-container').innerHTML = '<p style="padding:60px;text-align:center;color:var(--text-muted);">暂无聊天记录</p>';
+    document.getElementById('chat-result-count').textContent = '';
+    return;
+  }
+  const html = `<table class="chat-logs-table"><thead><tr>
+    <th style="width:130px;">时间</th>
+    <th style="width:100px;">群名</th>
+    <th style="width:70px;">用户</th>
+    <th style="min-width:180px;">消息</th>
+    <th style="min-width:220px;">回复</th>
+    <th style="width:50px;"></th>
+  </tr></thead><tbody>${logs.map(log => `<tr>
+    <td class="chat-msg-time">${log.created_at ? log.created_at.replace('T',' ').substring(0,16) : '-'}</td>
+    <td title="${chatEscapeHtml(log.room_name||'')}">${chatEscapeHtml(chatTruncate(log.room_name||'-',10))}</td>
+    <td class="chat-msg-user">${chatEscapeHtml(chatTruncate(log.user_name||'-',8))}</td>
+    <td class="chat-msg-content">${chatHighlight(chatEscapeHtml(log.content), keyword)}</td>
+    <td class="chat-msg-reply">${chatHighlight(chatEscapeHtml(chatTruncate(log.reply||'-',100)), keyword)}</td>
+    <td><button class="chat-delete-btn" onclick="chatDeleteLog(${log.id})">删除</button></td>
+  </tr>`).join('')}</tbody></table>`;
+  document.getElementById('chat-logs-container').innerHTML = html;
+  document.getElementById('chat-result-count').textContent = `共 ${chatTotalRecords} 条`;
+}
+
+function chatRenderPagination() {
+  const totalPages = Math.ceil(chatTotalRecords / chatPageSize);
+  if (totalPages <= 1) { document.getElementById('chat-pagination').style.display = 'none'; return; }
+  document.getElementById('chat-pagination').style.display = 'flex';
+  document.getElementById('chat-prev-btn').disabled = chatCurrentPage <= 1;
+  document.getElementById('chat-next-btn').disabled = chatCurrentPage >= totalPages;
+
+  // 生成页码按钮
+  const pages = chatGeneratePages(chatCurrentPage, totalPages);
+  const container = document.getElementById('chat-page-buttons');
+  container.innerHTML = pages.map(p => {
+    if (p === '...') return '<span class="page-ellipsis">…</span>';
+    const active = p === chatCurrentPage ? ' active' : '';
+    return `<button class="page-btn${active}" onclick="chatGotoPage(${p})">${p}</button>`;
+  }).join('');
+
+  // 更新跳转输入框
+  const jumpInput = document.getElementById('chat-jump-input');
+  jumpInput.value = chatCurrentPage;
+  jumpInput.max = totalPages;
+}
+
+function chatGeneratePages(current, total) {
+  if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+  const pages = [];
+  pages.push(1);
+  if (current > 4) pages.push('...');
+  const start = current <= 4 ? 2 : Math.max(2, current - 2);
+  const end = current >= total - 3 ? total - 1 : Math.min(total - 1, current + 2);
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (current < total - 3) pages.push('...');
+  if (pages[pages.length - 1] !== total) pages.push(total);
+  return pages;
+}
+
+function chatGotoPage(page) {
+  const totalPages = Math.ceil(chatTotalRecords / chatPageSize);
+  if (page < 1 || page > totalPages) return;
+  chatCurrentPage = page;
+  chatLoadLogs();
+}
+
+function chatJumpPage() {
+  const input = document.getElementById('chat-jump-input');
+  const page = parseInt(input.value);
+  if (isNaN(page) || page < 1) { input.value = chatCurrentPage; return; }
+  chatGotoPage(page);
+}
+
+function chatPrevPage() { if (chatCurrentPage > 1) { chatCurrentPage--; chatLoadLogs(); } }
+function chatNextPage() { const t = Math.ceil(chatTotalRecords / chatPageSize); if (chatCurrentPage < t) { chatCurrentPage++; chatLoadLogs(); } }
+
+async function chatDeleteLog(id) {
+  if (!confirm('确定删除？')) return;
+  try {
+    const res = await fetch(`/api/logs/${id}`, { method: 'DELETE' }).then(r => r.json());
+    if (res.success) { chatLoadLogs(); chatLoadStats(); chatLoadRooms(); }
+    else toast(res.error, 'error');
+  } catch (e) { toast('删除失败', 'error'); }
+}
+
+function chatResetFilter() {
+  document.getElementById('chat-keyword').value = '';
+  chatCurrentRoomId = null;
+  chatCurrentPage = 1;
+  chatInitDates();
+  chatLoadLogs();
+  chatLoadRooms();
+}
+
+function chatEscapeHtml(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function chatTruncate(s, n) { return s && s.length > n ? s.substring(0, n) + '...' : s; }
+function chatHighlight(text, kw) { if (!kw || !text) return text; return text.replace(new RegExp(`(${kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<span class="chat-highlight">$1</span>'); }
+
+document.getElementById('chatFilterForm').addEventListener('submit', e => { e.preventDefault(); chatCurrentPage = 1; chatLoadLogs(); });
+document.getElementById('chat-keyword').addEventListener('keypress', e => { if (e.key === 'Enter') { chatCurrentPage = 1; chatLoadLogs(); } });
+document.getElementById('chat-jump-input').addEventListener('keypress', e => { if (e.key === 'Enter') { chatJumpPage(); } });
+
+// chatInitDates moved to showMainApp()
 </script>
 </body>
 </html>
